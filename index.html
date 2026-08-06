@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151515" />
+    <title>Krea 2 · RunningHub 调用台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></div>
+        <div class="top-actions">
+          <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">本地调用模式</span></div>
+          <div class="settings-wrap">
+            <button id="settingsButton" class="settings-button" type="button" aria-expanded="false" aria-controls="settingsPanel"><span class="settings-icon">⚙</span><span>API 设置</span><i id="keyState">未设置</i></button>
+            <section id="settingsPanel" class="settings-panel hidden" aria-label="RunningHub API 设置">
+              <div class="settings-title"><div><p class="eyebrow">CONNECTION</p><strong>RunningHub API Key</strong></div><button id="closeSettings" type="button" aria-label="关闭设置">×</button></div>
+              <label class="field api-key-field">
+                <span>API Key</span>
+                <div class="secret-input"><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴你的 32 位 API Key" /><button id="toggleKey" type="button" aria-label="显示 API Key">显示</button></div>
+                <small>仅保存于此浏览器的当前设备。请勿在公共电脑保存密钥。</small>
+              </label>
+              <div class="settings-actions"><button id="clearKey" type="button" class="clear-key">清除</button><button id="saveKey" type="button" class="save-key">保存设置</button></div>
+              <p id="settingsMessage" class="settings-message" aria-live="polite"></p>
+            </section>
+          </div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">IMAGE GENERATION / WORKFLOW #2080711492936511490</p>
+          <h1>把想象，<em>渲染成画面。</em></h1>
+          <p class="lede">Krea 2 文生图工作流。设置提示词和画面规格后，直接提交至 RunningHub 云端生成。</p>
+        </div>
+        <div class="workflow-note">
+          <span>当前工作流</span>
+          <strong>Krea 2 · 多 LoRA 画像风格</strong>
+          <small>PNG 打包为 ZIP 输出</small>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <form id="generationForm" class="control-panel" novalidate>
+          <div class="section-heading"><span>01</span><h2>创作设置</h2></div>
+          <label class="field prompt-field">
+            <span>正向提示词 <small>Prompt</small></span>
+            <textarea id="prompt" required placeholder="描述你想生成的画面…"></textarea>
+            <small class="count"><b id="promptCount">0</b> / 4,000</small>
+          </label>
+          <label class="field">
+            <span>负向提示词 <small>Negative prompt</small></span>
+            <textarea id="negativePrompt" rows="3" placeholder="不希望在画面中出现的元素…"></textarea>
+          </label>
+
+          <div class="field-row dimensions">
+            <label class="field"><span>画布宽度</span><input id="width" type="number" min="256" max="2048" step="64" value="1280" /></label>
+            <span class="times">×</span>
+            <label class="field"><span>画布高度</span><input id="height" type="number" min="256" max="2048" step="64" value="1984" /></label>
+          </div>
+          <div class="preset-row" aria-label="常用画幅">
+            <button type="button" class="preset" data-size="1024,1024">1:1</button>
+            <button type="button" class="preset" data-size="1024,1365">3:4</button>
+            <button type="button" class="preset active" data-size="1280,1984">2:3</button>
+            <button type="button" class="preset" data-size="1365,1024">4:3</button>
+            <button type="button" class="preset" data-size="1536,1024">3:2</button>
+            <button type="button" class="preset" data-size="1536,864">16:9</button>
+            <button type="button" class="preset" data-size="864,1536">9:16</button>
+          </div>
+
+          <details class="advanced">
+            <summary><span>进阶参数</span><small>采样器、种子与运行实例</small></summary>
+            <div class="advanced-content">
+              <div class="field-row three">
+                <label class="field"><span>步数</span><input id="steps" type="number" min="1" max="50" value="10" /></label>
+                <label class="field"><span>CFG</span><input id="cfg" type="number" min="0" max="20" step="0.1" value="1" /></label>
+                <label class="field"><span>批次数</span><input id="batchSize" type="number" min="1" max="4" value="1" /></label>
+              </div>
+              <div class="field-row">
+                <label class="field"><span>随机种子</span><input id="seed" type="number" min="0" placeholder="留空则随机" /></label>
+                <label class="field"><span>运行实例</span><select id="instanceType"><option value="default">default · 24G</option><option value="plus">plus · 48G</option></select></label>
+              </div>
+              <div class="field-row">
+                <label class="field"><span>采样器</span><select id="sampler"><option value="euler">Euler</option><option value="euler_ancestral">Euler ancestral</option><option value="dpmpp_2m">DPM++ 2M</option></select></label>
+                <label class="field"><span>调度器</span><select id="scheduler"><option value="simple">Simple</option><option value="normal">Normal</option><option value="karras">Karras</option></select></label>
+              </div>
+            </div>
+          </details>
+
+          <div class="section-heading api-heading"><span>02</span><h2>运行选项</h2></div>
+          <p class="api-reminder">API Key 请在右上角 <button id="openSettingsHint" type="button">API 设置</button> 中填写并保存。</p>
+          <div class="options"><label><input id="addMetadata" type="checkbox" checked /> <span>写入工作流元数据</span></label><label><input id="personalQueue" type="checkbox" /> <span>使用个人独占队列</span></label></div>
+          <button id="generateButton" class="generate" type="submit"><span>开始生成</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+
+        <aside class="result-panel" aria-labelledby="resultTitle">
+          <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">生成结果</h2></div><span id="statusBadge" class="status idle">等待提交</span></div>
+          <div id="emptyState" class="empty-state"><div class="spark">✦</div><h3>图片池正在等待灵感</h3><p>填写提示词并提交任务。生成完成后，图片会自动缓存至本浏览器的图片池。</p></div>
+          <div id="progressState" class="progress-state hidden"><div class="orb"><i></i></div><p id="progressTitle">正在提交任务…</p><small id="progressDetail">连接 RunningHub 云端</small><div class="progress-line"><i id="progressLine"></i></div><code id="taskIdDisplay"></code></div>
+          <div id="results" class="results hidden">
+            <div class="pool-toolbar"><div><span class="pool-label">本地图片池</span><strong id="poolCount">0 张图片</strong></div><div><a id="zipDownload" class="zip-download hidden" target="_blank" rel="noreferrer">下载 ZIP ↗</a><button id="clearPool" type="button" class="clear-pool">清空图片池</button></div></div>
+            <div id="poolGrid" class="pool-grid"></div>
+            <p id="poolEmpty" class="pool-empty hidden">图片池为空。完成一次生成后，图片会缓存在此浏览器中。</p>
+          </div>
+          <div id="errorState" class="error-state hidden"><div>!</div><h3 id="errorTitle">任务未能完成</h3><p id="errorMessage"></p><button id="retryButton" type="button">返回编辑</button></div>
+          <p class="result-footnote">结果链接由 RunningHub 提供，有效期为 24 小时。图片池使用当前浏览器的本地缓存；可随时清空。</p>
+        </aside>
+      </section>
+    </main>
+
+    <template id="imageCardTemplate"><article class="image-card"><button class="image-link" type="button" title="点击放大查看"><img loading="lazy" alt="生成结果" /></button><div><span class="image-name"></span><div class="card-actions"><a class="download-image" download>下载</a><button class="delete-image" type="button">删除</button></div></div></article></template>
+    <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="图片放大预览"><button id="closeLightbox" class="lightbox-close" type="button" aria-label="关闭预览">×</button><img id="lightboxImage" alt="放大预览" /><p id="lightboxName"></p></div>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
