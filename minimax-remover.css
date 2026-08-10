@@ -1,0 +1,11 @@
+@import url("./character-card.css");
+
+.page-remover{--blue:#ffad65}
+.page-remover:before{background:radial-gradient(circle at 82% 12%,rgba(255,132,67,.16),transparent 22%),radial-gradient(circle at 5% 75%,rgba(174,226,77,.1),transparent 24%)}
+.remover-upload{min-height:242px;margin-bottom:20px}
+.preset-prompts{display:flex;flex-wrap:wrap;gap:7px;margin:-5px 0 22px}
+.preset-prompts button,.size-presets button{border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--muted);font:10px Manrope,"Noto Sans SC";padding:6px 8px;cursor:pointer}
+.preset-prompts button:hover{border-color:var(--blue);color:var(--ink);background:rgba(255,173,101,.12)}
+.size-presets{display:flex;flex-wrap:wrap;gap:7px;margin:-5px 0 20px}
+.size-presets button{font-family:"DM Mono",monospace}.size-presets button:hover,.size-presets button.active{border-color:var(--blue);color:#20150c;background:var(--blue)}
+.page-remover select{width:100%;height:41px;border:1px solid rgba(255,255,255,.17);border-radius:4px;background:#151818;color:var(--ink);padding:0 11px;font:500 13px Manrope,"Noto Sans SC",sans-serif;outline:none}.page-remover select:focus{border-color:var(--lime)}

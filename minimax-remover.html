@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121316" />
+    <title>MiniMax H3 一键消除 · RunningHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./minimax-remover.css" />
+    <link rel="stylesheet" href="./config-actions.css" />
+  </head>
+  <body class="page-remover">
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></a>
+        <div class="top-actions"><a class="back-link" href="./index.html">← 主创作台</a><span id="keyStatus" class="key-status">检查共享 API Key…</span></div>
+      </header>
+
+      <section class="hero">
+        <div><p class="eyebrow">ONE-CLICK REMOVE / WORKFLOW #2086666604021493762</p><h1>MiniMax H3，<em>一键消除画面元素。</em></h1><p>上传一张原图，说明想移除的对象或区域。生成结果会解压后存入与其他页面共用的本地图片池。</p></div>
+        <div class="workflow-card"><span>独立标签页</span><strong>MiniMax H3 一键消除</strong><small>自动共享主创作台保存的 API Key</small><b>最多同时运行 3 个任务</b></div>
+      </section>
+
+      <section class="workspace">
+        <form id="removerForm" class="form-panel" novalidate>
+          <div class="section-title"><span>01</span><h2>待处理图片与消除指令</h2></div>
+          <label class="upload-box remover-upload" for="sourceImage"><input id="sourceImage" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-icon">+</span><strong id="uploadTitle">上传待消除图片</strong><small id="uploadDetail">PNG、JPG 或 WebP，单次处理一张图</small><img id="sourcePreview" class="hidden" alt="待消除图片预览" /></label>
+          <label class="field"><span>消除说明 <small>节点 #78 · Prompt</small></span><textarea id="prompt" rows="6" required placeholder="例如：移除画面右侧的路人，自然补全背景，保留主体、构图和光线不变。"></textarea></label>
+          <div class="preset-prompts"><button type="button" data-prompt="移除画面中的路人，自然补全背景，保留主体、构图、光线和其余细节不变。">消除路人</button><button type="button" data-prompt="移除画面中的文字、水印和标识，自然补全周围纹理，保留其余画面不变。">消除文字 / 水印</button><button type="button" data-prompt="移除画面中的指定物体，自然补全被遮挡区域，保持主体、透视、光线和背景风格一致。">消除物体</button></div>
+          <details class="advanced"><summary>进阶参数 <span>画幅、采样与显卡</span></summary><div class="advanced-content">
+            <div class="field-row"><label class="field"><span>画布宽度</span><input id="width" type="number" min="512" max="2048" step="32" value="832" /></label><label class="field"><span>画布高度</span><input id="height" type="number" min="512" max="2048" step="32" value="1328" /></label></div>
+            <div class="size-presets" aria-label="画布规格"><button type="button" data-size="1376,768">1376 × 768</button><button type="button" data-size="768,1376">768 × 1376</button><button type="button" data-size="1664,928">1664 × 928</button><button type="button" data-size="928,1664">928 × 1664</button><button type="button" data-size="1920,1088">1920 × 1088</button><button type="button" data-size="1088,1920">1088 × 1920</button></div>
+            <div class="field-row three"><label class="field"><span>步骤</span><input id="steps" type="number" min="1" max="50" value="30" /></label><label class="field"><span>CFG</span><input id="cfg" type="number" min="0" max="20" step="0.1" value="1" /></label><label class="field"><span>种子</span><input id="seed" type="number" min="0" placeholder="随机" /></label></div>
+            <label class="field"><span>运行显卡</span><select id="instanceType"><option value="default">default · 24G 显存</option><option value="plus">plus · 48G 显存</option></select></label>
+          </div></details>
+          <div class="config-actions"><button id="saveConfig" class="save-config" type="button">保存当前配置</button><span>提示词与所有运行参数会在本机保留</span></div>
+          <button id="generateButton" class="generate" type="submit"><span>开始一键消除</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+
+        <aside class="result-panel" aria-labelledby="resultTitle">
+          <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">消除结果</h2></div><span id="status" class="status idle">等待提交</span></div>
+          <div id="taskQueue" class="task-queue hidden" aria-live="polite"></div>
+          <div id="empty" class="empty"><div>✦</div><h3>准备清理画面</h3><p>上传一张图片并说明要消除的内容。完成后的结果会持续保留在共享图片池中。</p></div>
+          <div id="progress" class="progress hidden"><div class="orb"></div><strong id="progressTitle">正在提交任务…</strong><small id="progressDetail">连接 RunningHub 云端</small></div>
+          <div id="results" class="results hidden"><div class="pool-toolbar"><div><span>共享本地图片池</span><strong id="poolCount">0 张图片</strong></div><button id="clearPool" type="button" class="clear-pool">清空图片池</button></div><div id="poolGrid" class="pool-grid"></div><p id="poolEmpty" class="pool-empty hidden">图片池为空。完成一次生成后，图片会缓存到此浏览器中。</p></div>
+          <p class="footnote">生成结果由 RunningHub 提供，原始链接有效期为 24 小时；图片池使用当前浏览器的本地缓存，可随时清空。</p>
+        </aside>
+      </section>
+    </main>
+    <template id="imageCardTemplate"><article class="image-card"><button type="button" class="image-button" title="点击放大查看"><img loading="lazy" alt="消除结果" /></button><div><span class="image-name"></span><div class="card-actions"><a class="download-image" download>下载</a><button class="delete-image" type="button">删除</button></div></div></article></template>
+    <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="图片放大预览"><button id="closeLightbox" type="button" aria-label="关闭预览">×</button><img id="lightboxImage" alt="放大预览" /><p id="lightboxName"></p></div>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="./minimax-remover.js"></script>
+  </body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#131618" />
+    <title>四视图角色卡 · RunningHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./character-card.css" />
+    <link rel="stylesheet" href="./config-actions.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></a>
+        <div class="top-actions"><a class="back-link" href="./index.html">← 主创作台</a><span id="keyStatus" class="key-status">检查共享 API Key…</span></div>
+      </header>
+
+      <section class="hero">
+        <div><p class="eyebrow">CHARACTER SHEET / WORKFLOW #2085397311380172802</p><h1>角色，<em>全角度呈现。</em></h1><p>上传一张角色参考图，生成包含面部特写、正面、侧面与背面的四视图角色卡。结果会进入与主页面共用的本地图片池。</p></div>
+        <div class="workflow-card"><span>独立标签页</span><strong>四视图角色卡</strong><small>自动共享主创作台保存的 API Key</small><b>最多同时运行 3 个任务</b></div>
+      </section>
+
+      <section class="workspace">
+        <form id="cardForm" class="form-panel" novalidate>
+          <div class="section-title"><span>01</span><h2>角色输入</h2></div>
+          <label class="upload-box" for="referenceImage"><input id="referenceImage" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-icon">✦</span><strong id="uploadTitle">上传角色参考图</strong><small id="uploadDetail">PNG、JPG 或 WebP · 将安全上传至 RunningHub</small><img id="referencePreview" class="hidden" alt="角色参考图预览" /></label>
+          <label class="field"><span>角色描述 <small>可选，会补充到四视图提示词</small></span><textarea id="characterPrompt" rows="5" placeholder="例如：红发赏金猎人，深绿色皮夹克，金属义肢"></textarea></label>
+          <label class="switch-row"><input id="animeCharacter" type="checkbox" /><span class="switch-ui"></span><span><b>动漫角色</b><small>为二次元角色启用对应输出分支</small></span></label>
+
+          <details class="advanced"><summary>进阶参数 <span>尺寸、采样与负向提示词</span></summary><div class="advanced-content">
+            <div class="field-row"><label class="field"><span>画布宽度</span><input id="width" type="number" min="512" max="3072" step="64" value="2000" /></label><label class="field"><span>画布高度</span><input id="height" type="number" min="512" max="2048" step="64" value="1200" /></label></div>
+            <div class="field-row three"><label class="field"><span>步数</span><input id="steps" type="number" min="1" max="50" value="10" /></label><label class="field"><span>CFG</span><input id="cfg" type="number" min="0" max="20" step="0.1" value="1" /></label><label class="field"><span>种子</span><input id="seed" type="number" min="0" placeholder="随机" /></label></div>
+            <label class="field"><span>负向提示词</span><textarea id="negativePrompt" rows="3" placeholder="留空使用工作流默认设置"></textarea></label>
+          </div></details>
+          <div class="config-actions"><button id="saveConfig" class="save-config" type="button">保存当前配置</button><span>提示词与所有运行参数会在本机保留</span></div>
+          <button id="generateButton" class="generate" type="submit"><span>生成四视图角色卡</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+
+        <aside class="result-panel" aria-labelledby="resultTitle">
+          <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">角色卡结果</h2></div><span id="status" class="status idle">等待提交</span></div>
+          <div id="taskQueue" class="task-queue hidden" aria-live="polite"></div>
+          <div id="empty" class="empty"><div>✦</div><h3>准备塑造角色</h3><p>上传角色参考图后开始生成。已完成的图片会持续保留在资源池中。</p></div>
+          <div id="progress" class="progress hidden"><div class="orb"></div><strong id="progressTitle">正在提交任务…</strong><small id="progressDetail">连接 RunningHub 云端</small></div>
+          <div id="results" class="results hidden"><div class="pool-toolbar"><div><span>共享本地图片池</span><strong id="poolCount">0 张图片</strong></div><button id="clearPool" type="button" class="clear-pool">清空图片池</button></div><div id="poolGrid" class="pool-grid"></div><p id="poolEmpty" class="pool-empty hidden">图片池为空。完成一次生成后，图片会缓存在此浏览器中。</p></div>
+          <p class="footnote">生成结果由 RunningHub 提供，原始链接有效期为 24 小时；图片池使用当前浏览器的本地缓存，可随时清空。</p>
+        </aside>
+      </section>
+    </main>
+    <template id="imageCardTemplate"><article class="image-card"><button type="button" class="image-button" title="点击放大查看"><img loading="lazy" alt="生成结果" /></button><div><span class="image-name"></span><div class="card-actions"><a class="download-image" download>下载</a><button class="delete-image" type="button">删除</button></div></div></article></template>
+    <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="图片放大预览"><button id="closeLightbox" type="button" aria-label="关闭预览">×</button><img id="lightboxImage" alt="放大预览" /><p id="lightboxName"></p></div>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="./character-card.js"></script>
+  </body>
+</html>

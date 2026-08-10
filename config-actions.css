@@ -1,0 +1,6 @@
+.config-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-8px 0 10px}
+.config-actions>span{color:var(--muted);font-size:10px;line-height:1.45}
+.save-config{border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);padding:7px 10px;font:700 10px Manrope,"Noto Sans SC",sans-serif;cursor:pointer;white-space:nowrap}
+.save-config:hover{border-color:var(--blue,var(--lime));color:var(--blue,var(--lime))}
+.form-message.info{color:var(--blue,var(--lime))}
+@media(max-width:460px){.config-actions{align-items:flex-start;flex-direction:column}.config-actions>span{order:-1}}

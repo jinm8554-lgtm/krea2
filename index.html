@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./config-actions.css" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -17,6 +18,9 @@
       <header class="topbar">
         <div class="brand"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></div>
         <div class="top-actions">
+          <a class="app-link" href="./character-card.html" target="_blank" rel="noopener">四视图角色卡 ↗</a>
+          <a class="app-link" href="./minimax-h3.html" target="_blank" rel="noopener">MiniMax H3 ↗</a>
+          <a class="app-link" href="./minimax-remover.html" target="_blank" rel="noopener">H3 一键消除 ↗</a>
           <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">本地调用模式</span></div>
           <div class="settings-wrap">
             <button id="settingsButton" class="settings-button" type="button" aria-expanded="false" aria-controls="settingsPanel"><span class="settings-icon">⚙</span><span>API 设置</span><i id="keyState">未设置</i></button>
@@ -36,14 +40,18 @@
 
       <section class="hero">
         <div>
-          <p class="eyebrow">IMAGE GENERATION / WORKFLOW #2080711492936511490</p>
+          <p id="workflowIdLabel" class="eyebrow">IMAGE GENERATION / WORKFLOW #2080711492936511490</p>
           <h1>把想象，<em>渲染成画面。</em></h1>
           <p class="lede">Krea 2 文生图工作流。设置提示词和画面规格后，直接提交至 RunningHub 云端生成。</p>
         </div>
         <div class="workflow-note">
           <span>当前工作流</span>
-          <strong>Krea 2 · 多 LoRA 画像风格</strong>
-          <small>PNG 打包为 ZIP 输出</small>
+          <strong id="workflowName">MJ 风格</strong>
+          <small id="workflowDescription">多 LoRA 艺术画像 · PNG 打包为 ZIP 输出</small>
+          <div class="workflow-switch" role="group" aria-label="选择工作流风格">
+            <button type="button" class="workflow-choice active" data-workflow="mj" aria-pressed="true">MJ 风格</button>
+            <button type="button" class="workflow-choice" data-workflow="street" aria-pressed="false">街拍风格</button>
+          </div>
         </div>
       </section>
 
@@ -97,12 +105,14 @@
           <div class="section-heading api-heading"><span>02</span><h2>运行选项</h2></div>
           <p class="api-reminder">API Key 请在右上角 <button id="openSettingsHint" type="button">API 设置</button> 中填写并保存。</p>
           <div class="options"><label><input id="addMetadata" type="checkbox" checked /> <span>写入工作流元数据</span></label><label><input id="personalQueue" type="checkbox" /> <span>使用个人独占队列</span></label></div>
+          <div class="config-actions"><button id="saveConfig" class="save-config" type="button">保存当前配置</button><span>提示词与所有运行参数会在本机保留</span></div>
           <button id="generateButton" class="generate" type="submit"><span>开始生成</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button>
           <p id="formMessage" class="form-message" aria-live="polite"></p>
         </form>
 
         <aside class="result-panel" aria-labelledby="resultTitle">
           <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">生成结果</h2></div><span id="statusBadge" class="status idle">等待提交</span></div>
+          <div id="taskQueue" class="task-queue hidden" aria-live="polite"></div>
           <div id="emptyState" class="empty-state"><div class="spark">✦</div><h3>图片池正在等待灵感</h3><p>填写提示词并提交任务。生成完成后，图片会自动缓存至本浏览器的图片池。</p></div>
           <div id="progressState" class="progress-state hidden"><div class="orb"><i></i></div><p id="progressTitle">正在提交任务…</p><small id="progressDetail">连接 RunningHub 云端</small><div class="progress-line"><i id="progressLine"></i></div><code id="taskIdDisplay"></code></div>
           <div id="results" class="results hidden">
