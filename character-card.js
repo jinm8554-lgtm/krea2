@@ -7,11 +7,13 @@ const MAX_CONCURRENT_TASKS = 3;
 const POOL_DB_NAME = 'krea2-runninghub-image-pool';
 const POOL_STORE_NAME = 'images';
 const CONFIG_STORAGE_KEY = 'krea2-character-card-configuration-v1';
+const MODEL_CALLER_STORAGE_KEY = 'krea2-openai-compatible-caller-v1';
+const DEFAULT_BASE_PROMPT = 'Convert the character in the image to a Character Sheet showing a face close-up, front full body, side full body and back full body views';
 
 const $ = (id) => document.getElementById(id);
 const ui = {
   form: $('cardForm'), file: $('referenceImage'), preview: $('referencePreview'), uploadTitle: $('uploadTitle'), uploadDetail: $('uploadDetail'),
-  prompt: $('characterPrompt'), anime: $('animeCharacter'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), negative: $('negativePrompt'),
+  prompt: $('characterPrompt'), basePrompt: $('basePrompt'), optimize: $('optimizeCharacterPrompt'), anime: $('animeCharacter'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), negative: $('negativePrompt'),
   button: $('generateButton'), message: $('formMessage'), keyStatus: $('keyStatus'), status: $('status'), empty: $('empty'), progress: $('progress'), results: $('results'),
   progressTitle: $('progressTitle'), progressDetail: $('progressDetail'), taskQueue: $('taskQueue'), poolGrid: $('poolGrid'), poolCount: $('poolCount'), poolEmpty: $('poolEmpty'), clearPool: $('clearPool'),
   lightbox: $('lightbox'), lightboxImage: $('lightboxImage'), lightboxName: $('lightboxName'), closeLightbox: $('closeLightbox'), saveConfig: $('saveConfig'),
@@ -36,19 +38,19 @@ function updateKeyStatus() {
 }
 function readJobInput() {
   return {
-    key: apiKey(), file: ui.file.files[0], prompt: ui.prompt.value.trim(), anime: ui.anime.checked,
+    key: apiKey(), file: ui.file.files[0], prompt: ui.prompt.value.trim(), basePrompt: ui.basePrompt.value.trim(), anime: ui.anime.checked,
     width: Number(ui.width.value), height: Number(ui.height.value), steps: Number(ui.steps.value), cfg: Number(ui.cfg.value),
     seed: ui.seed.value === '' ? null : Number(ui.seed.value), negative: ui.negative.value.trim(),
   };
 }
 function saveCurrentConfiguration() {
-  const configuration = { prompt: ui.prompt.value, anime: ui.anime.checked, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, negative: ui.negative.value };
+  const configuration = { prompt: ui.prompt.value, basePrompt: ui.basePrompt.value, anime: ui.anime.checked, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, negative: ui.negative.value };
   localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configuration)); ui.message.textContent = '当前配置已保存，刷新页面后会自动恢复。'; ui.message.className = 'form-message info';
 }
 function restoreCurrentConfiguration() {
   try {
     const configuration = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || 'null'); if (!configuration) return;
-    const values = { prompt: ui.prompt, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, negative: ui.negative };
+    const values = { prompt: ui.prompt, basePrompt: ui.basePrompt, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, negative: ui.negative };
     Object.entries(values).forEach(([key, input]) => { if (configuration[key] !== undefined && configuration[key] !== null) input.value = configuration[key]; });
     if (typeof configuration.anime === 'boolean') ui.anime.checked = configuration.anime;
   } catch { localStorage.removeItem(CONFIG_STORAGE_KEY); }
@@ -110,7 +112,7 @@ async function uploadReference(file, key) {
   return data.data.fileName;
 }
 function buildNodeInfoList(job, fileName) {
-  const basePrompt = 'Convert the character in the image to a Character Sheet showing a face close-up, front full body, side full body and back full body views';
+  const basePrompt = job.basePrompt || DEFAULT_BASE_PROMPT;
   const list = [
     node(72, 'image', fileName), node(119, 'prompt', job.prompt ? `${basePrompt}. ${job.prompt}` : basePrompt),
     node(85, 'prompt', job.negative), node(170, 'value', job.anime), node(135, 'width', job.width), node(135, 'height', job.height),
@@ -118,6 +120,27 @@ function buildNodeInfoList(job, fileName) {
   ];
   if (job.seed !== null) list.push(node(53, 'seed', job.seed));
   return list;
+}
+function modelCallerConfiguration() { try { return JSON.parse(localStorage.getItem(MODEL_CALLER_STORAGE_KEY) || '{}'); } catch { return {}; } }
+function chatCompletionsUrl(endpoint) { const base = endpoint.trim().replace(/\/+$/, '').replace(/\/models(?:\?.*)?$/i, ''); if (!base) throw new Error('请先在模型调用器中保存服务地址。'); return /\/chat\/completions$/i.test(base) ? base : `${base}/chat/completions`; }
+function fileAsDataUri(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('无法读取角色参考图。')); reader.readAsDataURL(file); }); }
+function completionText(payload) { const content = payload?.choices?.[0]?.message?.content; if (typeof content === 'string') return content.trim(); if (Array.isArray(content)) return content.map((part) => part?.text || part?.content || '').join('').trim(); return ''; }
+async function optimizeCharacterPrompt() {
+  const file = ui.file.files[0]; const extra = ui.prompt.value.trim(); const modelConfig = modelCallerConfiguration();
+  if (!file) { ui.message.textContent = '请先上传角色参考图，再使用 AI 优化。'; return; }
+  if (!modelConfig.endpoint || !modelConfig.apiKey || !modelConfig.model) { ui.message.textContent = '请先在“模型调用器”页面保存服务地址、密钥并选择模型。'; return; }
+  ui.optimize.disabled = true; ui.optimize.textContent = '分析中…'; ui.message.textContent = '正在调用已保存模型识别角色参考图…'; ui.message.className = 'form-message info';
+  try {
+    const response = await fetch(chatCompletionsUrl(modelConfig.endpoint), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${modelConfig.apiKey}` }, body: JSON.stringify({ model: modelConfig.model, temperature: 0.35, messages: [
+      { role: 'system', content: '你是角色设定提示词助手。根据用户上传的角色参考图，生成一段简洁、可用于四视图角色卡生成的中文角色描述。只描述可见的人物外观特征：五官与脸部特征、发型与发色、衣着、体型与肢体特征、饰品、妆容和材质风格。不要描述人物姿势、动作、手势、镜头构图、场景或背景。用户已有文字时，将其与图片信息自然融合。只输出最终描述本身，不要标题、解释、思考过程、Markdown 或引号，也不要推断真实身份或不可见信息。' },
+      { role: 'user', content: [{ type: 'text', text: extra ? `用户补充描述：${extra}\n请结合图片优化角色描述。` : '用户没有文字描述。请仅根据图片生成角色描述。' }, { type: 'image_url', image_url: { url: await fileAsDataUri(file) } }] },
+    ] }) });
+    let payload; try { payload = await response.json(); } catch { throw new Error(`模型服务返回了无法解析的数据（HTTP ${response.status}）。`); }
+    if (!response.ok) throw new Error(payload.error?.message || payload.message || `模型调用失败（HTTP ${response.status}）。`);
+    const optimized = completionText(payload).replace(/^```(?:text)?\s*/i, '').replace(/```$/i, '').trim(); if (!optimized) throw new Error('模型未返回可用的角色描述。');
+    ui.prompt.value = optimized; ui.message.textContent = '角色描述已由模型生成并替换。'; ui.message.className = 'form-message info';
+  } catch (error) { ui.message.textContent = error.message || 'AI 优化失败，请检查模型调用器配置或跨域设置。'; ui.message.className = 'form-message'; }
+  finally { ui.optimize.disabled = false; ui.optimize.textContent = '✦ AI 优化'; }
 }
 async function submitTask(job, fileName) {
   return requestJson(`${API_BASE}/run/workflow/${WORKFLOW_ID}`, {
@@ -220,6 +243,7 @@ ui.file.addEventListener('change', () => {
   ui.preview.src = URL.createObjectURL(file); ui.preview.classList.remove('hidden'); ui.uploadTitle.textContent = file.name; ui.uploadDetail.textContent = `已选择 ${(file.size / 1024 / 1024).toFixed(1)} MB 参考图`;
 });
 ui.saveConfig.addEventListener('click', saveCurrentConfiguration);
+ui.optimize.addEventListener('click', optimizeCharacterPrompt);
 ui.form.addEventListener('submit', async (event) => {
   event.preventDefault(); ui.message.textContent = '';
   const job = readJobInput();

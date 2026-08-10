@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121316" />
+    <title>模型调用器 · KREA 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./model-caller.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> MODEL LAB</span></a>
+        <div class="top-actions"><a class="back-link" href="./index.html">← 主创作台</a><div class="caller-wrap"><button id="callerButton" class="caller-button" type="button" aria-expanded="false"><span>◈</span> 模型调用器 <i id="callerState">未配置</i></button><section id="callerPanel" class="caller-panel hidden" aria-label="OpenAI 模型调用器设置"><div class="panel-title"><div><p class="eyebrow">OPENAI COMPATIBLE</p><strong>模型调用器</strong></div><button id="closeCaller" type="button" aria-label="关闭设置">×</button></div><label class="field"><span>服务地址 <small>OpenAI 兼容 API Base URL</small></span><input id="endpoint" type="url" inputmode="url" placeholder="https://api.example.com/v1" autocomplete="url" /></label><label class="field"><span>API Key <small>仅保存在此浏览器</small></span><div class="secret-input"><input id="apiKey" type="password" autocomplete="off" placeholder="sk-..." /><button id="toggleKey" type="button">显示</button></div></label><div class="panel-actions"><button id="saveCaller" type="button" class="secondary">保存配置</button><button id="fetchModels" type="button" class="primary">拉取模型</button></div><p id="callerMessage" class="caller-message" aria-live="polite"></p></section></div></div>
+      </header>
+
+      <section class="hero">
+        <div><p class="eyebrow">FOUNDATION / OPENAI-COMPATIBLE MODELS</p><h1>先接入模型，<em>再编排工作流。</em></h1><p>在右上角保存任意 OpenAI 兼容服务的地址与密钥，一键从 <code>/models</code> 拉取可用模型。这里的配置与 RunningHub 密钥完全隔离。</p></div>
+        <div class="info-card"><span>独立标签页</span><strong>OpenAI 模型调用器</strong><small>地址、密钥和模型仅保存在当前浏览器</small><b>准备就绪后可作为后续工作流的模型来源</b></div>
+      </section>
+
+      <section class="workspace">
+        <section class="selection-panel" aria-labelledby="selectionTitle"><div class="section-title"><span>01</span><h2 id="selectionTitle">选择已接入模型</h2></div><label class="field"><span>当前模型</span><select id="modelSelect" disabled><option value="">请先在右上角拉取模型</option></select></label><div class="model-actions"><button id="refreshModels" type="button" class="outline">↻ 重新拉取</button><button id="saveModel" type="button" class="outline">保存所选模型</button></div><div class="endpoint-preview"><span>当前端点</span><code id="endpointPreview">尚未配置</code></div><p class="helper">模型列表会从你填写的 OpenAI 兼容服务的 <code>/models</code> 接口读取。服务端需允许浏览器跨域访问。</p></section>
+        <aside class="result-panel"><p class="eyebrow">STATUS</p><h2>基础调用器已就绪</h2><div id="emptyState" class="empty-state"><div>◈</div><h3>等待模型服务配置</h3><p>保存服务地址和密钥后，拉取模型并选择一个模型。后续可以在此基础上添加聊天、图像或工作流调用。</p></div><div id="readyState" class="ready-state hidden"><i>✓</i><div><strong id="selectedModelName">已选择模型</strong><small id="selectedModelDetail">该选择已保存在本机。</small></div></div><p class="footnote">密钥不会发送到 KREA 2 或 RunningHub；只有点击“拉取模型”时，浏览器才会将密钥发送到你填写的服务地址。</p></aside>
+      </section>
+    </main>
+    <script src="./model-caller.js"></script>
+  </body>
+</html>

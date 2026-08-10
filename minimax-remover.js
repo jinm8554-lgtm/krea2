@@ -7,11 +7,12 @@ const MAX_CONCURRENT_TASKS = 3;
 const POOL_DB_NAME = 'krea2-runninghub-image-pool';
 const POOL_STORE_NAME = 'images';
 const CONFIG_STORAGE_KEY = 'krea2-minimax-remover-configuration-v1';
+const MODEL_CALLER_STORAGE_KEY = 'krea2-openai-compatible-caller-v1';
 
 const $ = (id) => document.getElementById(id);
 const ui = {
-  form: $('removerForm'), file: $('sourceImage'), preview: $('sourcePreview'), uploadTitle: $('uploadTitle'), uploadDetail: $('uploadDetail'), prompt: $('prompt'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), instance: $('instanceType'),
-  button: $('generateButton'), message: $('formMessage'), keyStatus: $('keyStatus'), status: $('status'), empty: $('empty'), progress: $('progress'), results: $('results'), progressTitle: $('progressTitle'), progressDetail: $('progressDetail'), taskQueue: $('taskQueue'), poolGrid: $('poolGrid'), poolCount: $('poolCount'), poolEmpty: $('poolEmpty'), clearPool: $('clearPool'), lightbox: $('lightbox'), lightboxImage: $('lightboxImage'), lightboxName: $('lightboxName'), closeLightbox: $('closeLightbox'), saveConfig: $('saveConfig'),
+  form: $('removerForm'), file: $('sourceImage'), preview: $('sourcePreview'), uploadTitle: $('uploadTitle'), uploadDetail: $('uploadDetail'), prompt: $('prompt'), lockPrompt: $('lockPrompt'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), instance: $('instanceType'),
+  button: $('generateButton'), message: $('formMessage'), optimize: $('optimizePrompt'), keyStatus: $('keyStatus'), status: $('status'), empty: $('empty'), progress: $('progress'), results: $('results'), progressTitle: $('progressTitle'), progressDetail: $('progressDetail'), taskQueue: $('taskQueue'), poolGrid: $('poolGrid'), poolCount: $('poolCount'), poolEmpty: $('poolEmpty'), clearPool: $('clearPool'), lightbox: $('lightbox'), lightboxImage: $('lightboxImage'), lightboxName: $('lightboxName'), closeLightbox: $('closeLightbox'), saveConfig: $('saveConfig'),
 };
 const taskRecords = [];
 const runningTaskKeys = new Set();
@@ -23,17 +24,52 @@ function imageId() { return crypto.randomUUID ? crypto.randomUUID() : `${Date.no
 function setStatus(type, text) { ui.status.className = `status ${type}`; ui.status.textContent = text; }
 function friendlyError(error) { if (error.name === 'TypeError' && /fetch/i.test(error.message)) return '无法连接到 RunningHub，请检查网络或浏览器跨域限制。'; return error.message || '发生未知错误，请稍后重试。'; }
 function updateKeyStatus() { const ready = Boolean(apiKey()); ui.keyStatus.textContent = ready ? '已共享 API Key' : '主页面尚未保存 API Key'; ui.keyStatus.classList.toggle('ready', ready); }
-function readJobInput() { return { key: apiKey(), file: ui.file.files[0] || null, prompt: ui.prompt.value.trim(), width: Number(ui.width.value), height: Number(ui.height.value), steps: Number(ui.steps.value), cfg: Number(ui.cfg.value), seed: ui.seed.value === '' ? null : Number(ui.seed.value), instance: ui.instance.value }; }
+function readJobInput() { return { key: apiKey(), file: ui.file.files[0] || null, prompt: ui.prompt.value.trim(), lockPrompt: ui.lockPrompt.value.trim(), width: Number(ui.width.value), height: Number(ui.height.value), steps: Number(ui.steps.value), cfg: Number(ui.cfg.value), seed: ui.seed.value === '' ? null : Number(ui.seed.value), instance: ui.instance.value }; }
 function saveCurrentConfiguration() {
-  const configuration = { prompt: ui.prompt.value, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, instance: ui.instance.value };
+  const configuration = { prompt: ui.prompt.value, lockPrompt: ui.lockPrompt.value, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, instance: ui.instance.value };
   localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configuration)); ui.message.textContent = '当前配置已保存，刷新页面后会自动恢复。'; ui.message.className = 'form-message info';
 }
 function restoreCurrentConfiguration() {
   try {
     const configuration = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || 'null'); if (!configuration) return;
-    const values = { prompt: ui.prompt, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, instance: ui.instance };
+    const values = { prompt: ui.prompt, lockPrompt: ui.lockPrompt, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, instance: ui.instance };
     Object.entries(values).forEach(([key, input]) => { if (configuration[key] !== undefined && configuration[key] !== null) input.value = configuration[key]; });
   } catch { localStorage.removeItem(CONFIG_STORAGE_KEY); }
+}
+function modelCallerConfiguration() { try { return JSON.parse(localStorage.getItem(MODEL_CALLER_STORAGE_KEY) || '{}'); } catch { return {}; } }
+function chatCompletionsUrl(endpoint) {
+  const base = endpoint.trim().replace(/\/+$/, '').replace(/\/models(?:\?.*)?$/i, '');
+  if (!base) throw new Error('请先在模型调用器中保存服务地址。');
+  return /\/chat\/completions$/i.test(base) ? base : `${base}/chat/completions`;
+}
+function fileAsDataUri(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('无法读取上传图片。')); reader.readAsDataURL(file); }); }
+function completionText(payload) {
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content.trim();
+  if (Array.isArray(content)) return content.map((part) => part?.text || part?.content || '').join('').trim();
+  return '';
+}
+async function optimizePrompt() {
+  const file = ui.file.files[0]; const currentPrompt = ui.prompt.value.trim(); const modelConfig = modelCallerConfiguration();
+  if (!file) { ui.message.textContent = '请先上传待消除图片，再优化说明。'; return; }
+  if (!currentPrompt) { ui.message.textContent = '请先填写需要优化的消除说明。'; ui.prompt.focus(); return; }
+  if (!modelConfig.endpoint || !modelConfig.apiKey || !modelConfig.model) { ui.message.textContent = '请先在“模型调用器”页面保存服务地址、密钥并选择模型。'; return; }
+  ui.optimize.disabled = true; ui.optimize.textContent = '优化中…'; ui.message.textContent = '正在调用已保存模型读取图片并润色说明…'; ui.message.className = 'form-message info';
+  try {
+    const response = await fetch(chatCompletionsUrl(modelConfig.endpoint), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${modelConfig.apiKey}` },
+      body: JSON.stringify({ model: modelConfig.model, temperature: 0.35, messages: [
+        { role: 'system', content: '你是专业图像编辑提示词优化助手。根据用户上传的图片与需求，输出一条清晰、可直接用于图像编辑模型的中文指令。保留用户的消除目标，补足自然修复、背景延展、构图、光线和主体保持等必要约束。只输出优化后的提示词，不要解释、标题、Markdown 或引号。' },
+        { role: 'user', content: [{ type: 'text', text: `请优化这条一键消除指令：\n${currentPrompt}` }, { type: 'image_url', image_url: { url: await fileAsDataUri(file) } }] },
+      ] }),
+    });
+    let payload; try { payload = await response.json(); } catch { throw new Error(`模型服务返回了无法解析的数据（HTTP ${response.status}）。`); }
+    if (!response.ok) throw new Error(payload.error?.message || payload.message || `模型调用失败（HTTP ${response.status}）。`);
+    const optimized = completionText(payload).replace(/^```(?:text)?\s*/i, '').replace(/```$/i, '').trim();
+    if (!optimized) throw new Error('模型未返回可用的优化提示词。');
+    ui.prompt.value = optimized; ui.message.textContent = '提示词已由模型优化并替换。'; ui.message.className = 'form-message info';
+  } catch (error) { ui.message.textContent = error.message || '提示词优化失败，请检查模型调用器配置或跨域设置。'; ui.message.className = 'form-message'; }
+  finally { ui.optimize.disabled = false; ui.optimize.textContent = '✦ 优化'; }
 }
 function createTaskRecord(job) { return { key: imageId(), taskId: '', apiKey: job.key, status: '正在提交', detail: '准备上传待处理图片', state: 'working', isActive: true, error: '', zipUrl: '', cancelRequested: false, cancelling: false }; }
 function updateTaskRecord(record, status, detail, state = 'working') { record.status = status; record.detail = detail; record.state = state; renderTaskQueue(); updateOutputVisibility(); }
@@ -61,7 +97,7 @@ function updateOutputVisibility() {
 }
 async function requestJson(url, options) { const response = await fetch(url, options); let data; try { data = await response.json(); } catch { throw new Error(`服务器返回了无法解析的响应（HTTP ${response.status}）。`); } if (!response.ok || data.errorCode || (typeof data.code === 'number' && data.code !== 0)) throw new Error(data.errorMessage || data.message || `请求失败（HTTP ${response.status}）`); return data; }
 async function uploadReference(file, key) { const formData = new FormData(); formData.append('file', file); const response = await fetch(`${API_BASE}/media/upload/binary`, { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: formData }); let data; try { data = await response.json(); } catch { throw new Error(`上传服务返回异常（HTTP ${response.status}）。`); } if (!response.ok || data.code !== 0 || !data.data?.fileName) throw new Error(data.message || '图片上传失败。'); return data.data.fileName; }
-function buildNodeInfoList(job, fileName) { const list = [node(71, 'image', fileName), node(78, 'text', job.prompt), node(60, 'value', job.width), node(61, 'value', job.height), node(77, 'length', 5), node(86, 'length', 1), node(45, 'steps', job.steps), node(45, 'cfg', job.cfg)]; if (job.seed !== null) list.push(node(45, 'seed', job.seed)); return list; }
+function buildNodeInfoList(job, fileName) { const list = [node(71, 'image', fileName), node(78, 'text', job.prompt), node(53, 'text', job.lockPrompt), node(60, 'value', job.width), node(61, 'value', job.height), node(77, 'length', 5), node(86, 'length', 1), node(45, 'steps', job.steps), node(45, 'cfg', job.cfg)]; if (job.seed !== null) list.push(node(45, 'seed', job.seed)); return list; }
 async function submitTask(job, fileName) { return requestJson(`${API_BASE}/run/workflow/${WORKFLOW_ID}`, { method: 'POST', headers: headers(job.key), body: JSON.stringify({ addMetadata: true, nodeInfoList: buildNodeInfoList(job, fileName), instanceType: job.instance, usePersonalQueue: false }) }); }
 async function getTask(taskId, key) { return requestJson(`${API_BASE}/query`, { method: 'POST', headers: headers(key), body: JSON.stringify({ taskId }) }); }
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,6 +136,7 @@ ui.file.addEventListener('change', () => {
   dimensions.src = URL.createObjectURL(file);
 });
 ui.saveConfig.addEventListener('click', saveCurrentConfiguration);
+ui.optimize.addEventListener('click', optimizePrompt);
 document.querySelectorAll('.preset-prompts button').forEach((button) => button.addEventListener('click', () => { ui.prompt.value = button.dataset.prompt; ui.prompt.focus(); }));
 document.querySelectorAll('.size-presets button').forEach((button) => button.addEventListener('click', () => { const [width, height] = button.dataset.size.split(','); ui.width.value = width; ui.height.value = height; document.querySelectorAll('.size-presets button').forEach((item) => item.classList.toggle('active', item === button)); }));
 ui.form.addEventListener('submit', async (event) => { event.preventDefault(); ui.message.textContent = ''; const job = readJobInput(); if (!job.key) { ui.message.textContent = '主创作台尚未保存 RunningHub API Key。'; return; } if (!job.file) { ui.message.textContent = '请先上传待消除图片。'; return; } if (!job.prompt) { ui.message.textContent = '请先写下消除说明。'; ui.prompt.focus(); return; } if (!window.JSZip) { ui.message.textContent = 'ZIP 解压组件加载失败，请检查网络后刷新。'; return; } if (runningTaskKeys.size >= MAX_CONCURRENT_TASKS) { ui.message.textContent = `最多同时运行 ${MAX_CONCURRENT_TASKS} 个任务，请等待任一任务完成后再提交。`; return; }

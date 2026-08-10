@@ -27,7 +27,8 @@
         <form id="cardForm" class="form-panel" novalidate>
           <div class="section-title"><span>01</span><h2>角色输入</h2></div>
           <label class="upload-box" for="referenceImage"><input id="referenceImage" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-icon">✦</span><strong id="uploadTitle">上传角色参考图</strong><small id="uploadDetail">PNG、JPG 或 WebP · 将安全上传至 RunningHub</small><img id="referencePreview" class="hidden" alt="角色参考图预览" /></label>
-          <label class="field"><span>角色描述 <small>可选，会补充到四视图提示词</small></span><textarea id="characterPrompt" rows="5" placeholder="例如：红发赏金猎人，深绿色皮夹克，金属义肢"></textarea></label>
+           <label class="field"><span class="field-label">角色描述 <small>可选，会补充到四视图提示词</small><button id="optimizeCharacterPrompt" class="optimize-prompt" type="button">✦ AI 优化</button></span><textarea id="characterPrompt" rows="5" placeholder="例如：红发赏金猎人，深绿色皮夹克，金属义肢；留空也可根据参考图自动生成描述"></textarea></label>
+           <label class="field"><span>四视图基础提示词 <small>节点 #119 · 可编辑</small></span><textarea id="basePrompt" rows="4">Convert the character in the image to a Character Sheet showing a face close-up, front full body, side full body and back full body views</textarea><small class="field-note">角色描述会追加在这段基础提示词之后；默认内容来自当前工作流。</small></label>
           <label class="switch-row"><input id="animeCharacter" type="checkbox" /><span class="switch-ui"></span><span><b>动漫角色</b><small>为二次元角色启用对应输出分支</small></span></label>
 
           <details class="advanced"><summary>进阶参数 <span>尺寸、采样与负向提示词</span></summary><div class="advanced-content">

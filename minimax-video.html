@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101313" />
+    <title>MiniMax H3 视频生成 · RunningHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./minimax-video.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html"><b>K2</b><span>KREA 2 <i>·</i> RUNNINGHUB</span></a>
+        <div class="top-actions"><a href="./index.html">← 主创作台</a><span id="keyStatus" class="key-status">检查共享 API Key…</span></div>
+      </header>
+
+      <section class="hero">
+        <div><p id="workflowLabel" class="eyebrow">MINIMAX H3 VIDEO / WORKFLOW</p><h1>MiniMax H3 <em>原生音视频生成</em></h1><p>根据生成模式自动调用对应工作流。任务完成后，页面会自动从 ZIP 结果中解压视频并直接预览。</p></div>
+        <div class="workflow-card"><span>独立标签页</span><strong>MiniMax H3 视频生成</strong><small id="workflowDetail">自动使用主创作台中保存的 RunningHub API Key</small><b>最多同时运行 3 个任务</b></div>
+      </section>
+
+      <section class="workspace">
+        <form id="videoForm" class="form-panel" novalidate>
+          <div class="section-title"><span>01</span><h2>生成模式 <small>工作流开关</small></h2></div>
+          <div id="modeSwitch" class="mode-switch" role="radiogroup" aria-label="生成模式">
+            <label><input type="radio" name="mode" value="text" checked /><span><b>文生视频</b><small>纯提示词生成</small></span></label>
+            <label><input type="radio" name="mode" value="image" /><span><b>单图参考</b><small>一张图片驱动视频</small></span></label>
+            <label><input type="radio" name="mode" value="multi" /><span><b>多图参考</b><small>图片 / 视频参考组合</small></span></label>
+          </div>
+          <p id="modeHint" class="mode-hint">当前将启用「文生视频」分支（节点 #311）。</p>
+
+          <section id="referenceSection" class="reference-section hidden" aria-labelledby="referenceTitle">
+            <div class="section-title compact"><span>02</span><h2 id="referenceTitle">参考素材</h2></div>
+            <div id="referenceGrid" class="reference-grid"></div>
+            <p class="reference-note">多图参考使用独立工作流：三张图片按顺序作为人物、道具、场景或风格参考输入。</p>
+          </section>
+
+          <div class="field"><span class="field-label">视频提示词 <small>Prompt</small><button id="optimizePrompt" class="optimize-prompt" type="button">✦ AI 优化</button></span><textarea id="prompt" rows="10" required placeholder="描述主体、动作、镜头、画面风格与声音。若使用参考素材，可用 @图片1、@图片2、@图片3 指代对应素材。"></textarea><small class="field-help">AI 优化会依据当前时长的工作流模板，并读取已上传的图片参考。</small></div>
+
+          <details class="advanced" open><summary>进阶参数 <span>比例、时长与显卡</span></summary><div class="advanced-content">
+            <div class="field-row"><label class="field"><span>创作流程</span><select id="storyFlow"><option value="drama">文戏 · 关系与情绪转折</option><option value="action">武戏 · 连续攻防</option><option value="storyboard">九宫格 · 关键画面时序</option></select></label><label class="field"><span>画面比例</span><select id="aspectRatio"><option value="16:9 (Widescreen)">16:9 横屏</option><option value="9:16 (Portrait)">9:16 竖屏</option><option value="1:1 (Square)">1:1 方形</option><option value="4:3 (Standard)">4:3 标准</option><option value="3:4 (Portrait)">3:4 竖幅</option></select></label></div>
+            <div class="field-row"><label class="field"><span>清晰度</span><select id="megapixels"><option value="0.7">0.7 MP</option><option value="1">1 MP</option><option value="1.5">1.5 MP</option></select></label><label class="field"><span>视频时长（秒）</span><input id="duration" type="number" min="2" max="15" step="1" value="8" /></label></div>
+            <label class="field"><span>运行显卡</span><select id="instanceType"><option value="default">default · 24G 显存</option><option value="plus">plus · 48G 显存</option><option value="ultra" data-multi-only>ultra · 84G 显存（多图参考）</option></select></label>
+          </div></details>
+          <div class="config-actions"><button id="saveConfig" type="button">保存当前配置</button><span>提示词、模式和参数会保存在本机；本地文件不会保存。</span></div>
+          <button id="generateButton" class="generate" type="submit"><span>开始生成视频</span><b>→</b></button>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+
+        <aside class="result-panel" aria-labelledby="resultTitle">
+          <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">视频结果</h2></div><span id="status" class="status idle">等待提交</span></div>
+          <div id="taskQueue" class="task-queue hidden" aria-live="polite"></div>
+          <div id="empty" class="empty"><div>✦</div><h3>准备创作视频</h3><p>选择模式，写下画面与声音描述，然后提交至 RunningHub 云端。</p></div>
+          <div id="progress" class="progress hidden"><div class="orb"></div><strong id="progressTitle">正在提交任务…</strong><small id="progressDetail">连接 RunningHub 云端</small></div>
+          <section id="results" class="results hidden"><div class="pool-toolbar"><div><span>本地视频池</span><strong id="poolCount">0 个视频</strong></div><button id="clearPool" type="button">清空视频池</button></div><div id="poolGrid" class="pool-grid"></div><p id="poolEmpty" class="pool-empty hidden">视频池为空。</p></section>
+          <p class="footnote">RunningHub 的原始结果链接有效期为 24 小时；已解压的视频会尝试缓存至当前浏览器，可随时删除或清空。</p>
+        </aside>
+      </section>
+    </main>
+    <template id="referenceTemplate"><label class="upload-box"><input type="file" /><span class="upload-icon">+</span><strong></strong><small></small><img class="hidden" alt="参考图片预览" /><video class="hidden" muted playsinline></video></label></template>
+    <template id="videoCardTemplate"><article class="video-card"><video controls preload="metadata" playsinline></video><div><span class="video-name"></span><div class="card-actions"><a class="download-video" download>下载</a><button class="extract-tail-frame" type="button">尾帧提取</button><button class="delete-video" type="button">删除</button></div></div></article></template>
+    <script src="./vendor/jszip.min.js"></script>
+    <script src="./minimax-video.js"></script>
+  </body>
+</html>
