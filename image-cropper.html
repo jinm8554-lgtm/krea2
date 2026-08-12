@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111110" />
+    <title>图片裁剪 · Krea 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./image-cropper.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></a>
+        <a class="back-link" href="./index.html">← 返回主创作台</a>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">LOCAL IMAGE TOOL</p>
+        <h1>把画面，<em>裁成正好的比例。</em></h1>
+        <p>上传图片或直接粘贴图片；拖动裁切框选取画面，用滑杆精确调整裁切范围。整个过程仅在浏览器本地完成。</p>
+      </section>
+
+      <section class="crop-workspace">
+        <section class="editor-panel" aria-labelledby="editorTitle">
+          <div class="panel-title"><div><p class="eyebrow">CANVAS</p><h2 id="editorTitle">裁切画布</h2></div><span id="sourceInfo">尚未选择图片</span></div>
+          <div id="cropDropzone" class="dropzone" tabindex="0" aria-label="裁切画布，可上传或粘贴图片">
+            <canvas id="cropCanvas" class="hidden" aria-label="可拖动裁切框的图片画布"></canvas>
+            <div id="dropPlaceholder" class="drop-placeholder"><b>＋</b><strong>上传或粘贴一张图片</strong><small>点击上传，或直接按 Ctrl / ⌘ + V</small></div>
+          </div>
+          <p class="canvas-help">拖动紫色裁切框调整取景位置；使用右侧“裁切范围”控制裁切大小。</p>
+        </section>
+
+        <aside class="controls-panel">
+          <div class="panel-title"><div><p class="eyebrow">SETTINGS</p><h2>裁切设置</h2></div></div>
+          <label class="upload-button" for="sourceFile"><input id="sourceFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><span>上传图片</span><small>支持 PNG、JPG、WebP、GIF</small></label>
+          <div class="control-group"><span>目标比例</span><div class="ratio-buttons" role="group" aria-label="目标比例"><button type="button" class="active" data-ratio="9:16">9 : 16</button><button type="button" data-ratio="16:9">16 : 9</button></div></div>
+          <label class="range-control"><span>裁切范围 <b id="sizeValue">100%</b></span><input id="cropScale" type="range" min="25" max="100" value="100" step="1" /></label>
+          <div class="action-row"><button id="resetCrop" type="button" class="secondary" disabled>重置位置</button><button id="downloadCrop" type="button" class="primary" disabled>下载 PNG</button></div>
+          <section class="output-preview" aria-labelledby="previewTitle"><div><p class="eyebrow">OUTPUT</p><h3 id="previewTitle">裁切预览</h3></div><div class="preview-frame"><img id="cropResult" class="hidden" alt="裁切结果预览" /><p id="previewHint">选择图片后显示结果</p></div><span id="cropStatus" aria-live="polite">等待图片</span></section>
+        </aside>
+      </section>
+    </main>
+    <script src="./image-cropper.js"></script>
+  </body>
+</html>

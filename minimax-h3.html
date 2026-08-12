@@ -19,7 +19,7 @@
       </header>
 
       <section class="hero">
-        <div><p class="eyebrow">OMNI IMAGE EDIT / WORKFLOW #2086493935005970434</p><h1>MiniMax H3，<em>自由编辑画面。</em></h1><p>以参考图、文字指令或两者结合来重绘场景。当前 API 工作流支持单图编辑；多图版本可在 RunningHub 另存发布后接入。</p></div>
+        <div><p class="eyebrow">OMNI IMAGE EDIT / WORKFLOW #2086493935005970434</p><h1>MiniMax H3，<em>自由编辑画面。</em></h1><p>以一至三张参考图和文字指令重绘场景。新版工作流会直接融合参考图中的人物、服装、场景与元素。</p></div>
         <div class="workflow-card"><span>独立标签页</span><strong>MiniMax H3 全能生图编辑</strong><small>自动共享主创作台保存的 API Key</small><b>最多同时运行 3 个任务</b></div>
       </section>
 
@@ -27,15 +27,14 @@
         <form id="minimaxForm" class="form-panel" novalidate>
           <div class="section-title"><span>01</span><h2>参考图与编辑指令</h2></div>
           <div class="reference-grid">
-            <label class="upload-box primary-upload" for="referenceImage1"><input id="referenceImage1" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-icon">✦</span><strong id="uploadTitle1">参考图 1（必填）</strong><small id="uploadDetail1">人物、主体或待编辑画面</small><img id="referencePreview1" class="hidden" alt="参考图 1 预览" /></label>
-            <label class="upload-box compact-upload" for="referenceImage2"><input id="referenceImage2" type="file" accept="image/png,image/jpeg,image/webp" /><span class="upload-icon">+</span><strong id="uploadTitle2">参考图 2（可选）</strong><small id="uploadDetail2">服装、道具或风格参考</small><img id="referencePreview2" class="hidden" alt="参考图 2 预览" /></label>
-            <label class="upload-box compact-upload" for="referenceImage3"><input id="referenceImage3" type="file" accept="image/png,image/jpeg,image/webp" /><span class="upload-icon">+</span><strong id="uploadTitle3">参考图 3（可选）</strong><small id="uploadDetail3">额外场景或元素参考</small><img id="referencePreview3" class="hidden" alt="参考图 3 预览" /></label>
+            <label class="upload-box primary-upload" for="referenceImage1"><input id="referenceImage1" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-icon">✦</span><strong id="uploadTitle1">参考图 1（必填）</strong><small id="uploadDetail1">主体、人脸或需要保留的画面元素</small><img id="referencePreview1" class="hidden" alt="参考图 1 预览" /></label>
+            <label class="upload-box compact-upload" for="referenceImage2"><input id="referenceImage2" type="file" accept="image/png,image/jpeg,image/webp" /><span class="upload-icon">+</span><strong id="uploadTitle2">参考图 2（可选）</strong><small id="uploadDetail2">服装、姿势、道具或风格参考</small><img id="referencePreview2" class="hidden" alt="参考图 2 预览" /></label>
+            <label class="upload-box compact-upload" for="referenceImage3"><input id="referenceImage3" type="file" accept="image/png,image/jpeg,image/webp" /><span class="upload-icon">+</span><strong id="uploadTitle3">参考图 3（可选）</strong><small id="uploadDetail3">额外人物、场景或元素参考</small><img id="referencePreview3" class="hidden" alt="参考图 3 预览" /></label>
           </div>
-          <label class="field"><span>编辑指令 <small>Prompt</small></span><textarea id="prompt" rows="6" required placeholder="例如：保持图 1 的人物脸部特征与发型，让人物穿着图 2 的服装，背景参考图 3，人物在夕阳下的城市天台上微笑。"></textarea></label>
-          <div class="preset-prompts"><button type="button" data-prompt="保持图 1 的人物脸部特征与发型，让人物穿着图 2 的服装，背景和姿势参考图 1。">人物换装</button><button type="button" data-prompt="保持图 1 的人物与构图，融合图 2 的风格和材质，制作一张高质量商业海报。">风格融合</button><button type="button" data-prompt="保持图 1 的主体，加入图 2 的元素，背景参考图 3，画面自然真实、光影协调。">多图合成</button></div>
-          <label class="field"><span>人物特征约束 <small>节点 #53 · 可编辑</small></span><textarea id="characterConstraint" rows="3">强制@图1用作人物的面部特征、五官比例、发型发色，中景，4k高清，</textarea></label>
+          <label class="field"><span class="field-label">编辑指令 <small>Prompt</small><button id="optimizePrompt" class="optimize-prompt" type="button">✦ AI 润色</button></span><textarea id="prompt" rows="6" required placeholder="例如：用图 1 的人物头部替换图 2 的人物头部，保留图 2 的背景和姿势不变。">用图1女孩的头部替换图2女孩的头部，并保留黑色短发的特征，保留图2的背景和姿势不变。</textarea><small class="field-help">AI 润色会读取已上传的 1–3 张参考图，并以六段式中文提示词直接替换当前内容。</small></label>
+          <div class="preset-prompts"><button type="button" data-prompt="用图 1 的人物头部替换图 2 的人物头部，保留图 2 的背景、服装和姿势不变。">人物换头</button><button type="button" data-prompt="保留图 1 的人物与构图，融合图 2 的服装、风格和材质，画面自然真实、光影协调。">风格融合</button><button type="button" data-prompt="以图 1 为主体，融合图 2 的人物或元素与图 3 的场景，构图自然、光影协调。">多图合成</button></div>
           <details class="advanced"><summary>进阶参数 <span>画幅、采样与种子</span></summary><div class="advanced-content">
-            <div class="field-row"><label class="field"><span>画布宽度</span><input id="width" type="number" min="512" max="2048" step="64" value="1216" /></label><label class="field"><span>画布高度</span><input id="height" type="number" min="512" max="2048" step="64" value="672" /></label></div>
+            <div class="field-row"><label class="field"><span>画布宽度</span><input id="width" type="number" min="512" max="2048" step="64" value="1088" /></label><label class="field"><span>画布高度</span><input id="height" type="number" min="512" max="2048" step="64" value="1856" /></label></div>
             <div class="size-presets" aria-label="画布规格"><button type="button" data-size="1376,768">1376 × 768</button><button type="button" data-size="768,1376">768 × 1376</button><button type="button" data-size="1664,928">1664 × 928</button><button type="button" data-size="928,1664">928 × 1664</button><button type="button" data-size="1920,1088">1920 × 1088</button><button type="button" data-size="1088,1920">1088 × 1920</button></div>
             <div class="field-row three"><label class="field"><span>步数</span><input id="steps" type="number" min="1" max="50" value="30" /></label><label class="field"><span>CFG</span><input id="cfg" type="number" min="0" max="20" step="0.1" value="1" /></label><label class="field"><span>种子</span><input id="seed" type="number" min="0" placeholder="随机" /></label></div>
             <label class="field"><span>运行显卡</span><select id="instanceType"><option value="default">default · 24G 显存</option><option value="plus">plus · 48G 显存</option></select></label>
@@ -48,7 +47,6 @@
         <aside class="result-panel" aria-labelledby="resultTitle">
           <div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">编辑结果</h2></div><span id="status" class="status idle">等待提交</span></div>
           <div id="taskQueue" class="task-queue hidden" aria-live="polite"></div>
-          <section class="face-monitor" aria-labelledby="faceMonitorTitle"><div><p class="eyebrow">FACE CHECK / NODE #82</p><h3 id="faceMonitorTitle">人脸捕捉预览</h3></div><div class="face-monitor-frame"><img id="facePreview" class="hidden" alt="节点 82 人脸捕捉预览" /><p id="facePreviewHint">等待运行结果。节点 #82 的人脸捕捉图会显示在这里。</p></div></section>
           <div id="empty" class="empty"><div>✦</div><h3>准备编辑画面</h3><p>上传一张参考图并写下编辑指令。已完成的图片会持续保留在共享资源池中。</p></div>
           <div id="progress" class="progress hidden"><div class="orb"></div><strong id="progressTitle">正在提交任务…</strong><small id="progressDetail">连接 RunningHub 云端</small></div>
           <div id="results" class="results hidden"><div class="pool-toolbar"><div><span>共享本地图片池</span><strong id="poolCount">0 张图片</strong></div><button id="clearPool" type="button" class="clear-pool">清空图片池</button></div><div id="poolGrid" class="pool-grid"></div><p id="poolEmpty" class="pool-empty hidden">图片池为空。完成一次生成后，图片会缓存在此浏览器中。</p></div>

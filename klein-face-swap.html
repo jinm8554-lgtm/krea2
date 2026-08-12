@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121316" />
+    <title>Klein 换头 · RunningHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./klein-face-swap.css" />
+    <link rel="stylesheet" href="./config-actions.css" />
+  </head>
+  <body class="page-klein-face-swap">
+    <main class="shell">
+      <header class="topbar"><a class="brand" href="./index.html"><span class="brand-mark">K2</span><span>KREA 2 <i>·</i> RUNNINGHUB</span></a><div class="top-actions"><a class="back-link" href="./index.html">← 主创作台</a><span id="keyStatus" class="key-status">检查共享 API Key…</span></div></header>
+
+      <section class="hero"><div><p class="eyebrow">KLEIN FACE SWAP / WORKFLOW #2087541291336085506</p><h1>替换面部，<em>保持整张画面自然。</em></h1><p>图 1 提供面部特征，图 2 提供人物姿势、服装、构图与背景。Klein 会识别面部、耳朵与头发后进行整体融合。</p></div><div class="workflow-card"><span>独立标签页</span><strong>Klein 换头</strong><small>自动共享主创作台保存的 API Key</small><b>最多同时运行 3 个任务</b></div></section>
+
+      <section class="workspace">
+        <form id="faceSwapForm" class="form-panel" novalidate>
+          <div class="section-title"><span>01</span><h2>上传两张参考图</h2></div>
+          <div class="swap-inputs">
+            <label class="upload-box source-upload" for="sourceImage"><input id="sourceImage" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-index">01</span><strong id="sourceTitle">图 1 · 源头像</strong><small id="sourceDetail">提供要保留的面部特征、五官和发型</small><img id="sourcePreview" class="hidden" alt="图 1 源头像预览" /></label>
+            <div class="swap-direction" aria-hidden="true"><i>→</i><small>替换</small></div>
+            <label class="upload-box target-upload" for="targetImage"><input id="targetImage" type="file" accept="image/png,image/jpeg,image/webp" required /><span class="upload-index">02</span><strong id="targetTitle">图 2 · 目标画面</strong><small id="targetDetail">保留人物姿势、服装、构图与背景</small><img id="targetPreview" class="hidden" alt="图 2 目标画面预览" /></label>
+          </div>
+          <p class="role-note"><b>使用提示：</b>图 1 尽量选择正脸、清晰、无遮挡的头像；图 2 决定最终身体、姿势、服装和背景。</p>
+          <label class="field"><span>融合提示词 <small>节点 #15 · 可编辑</small></span><textarea id="prompt" rows="3">换头，保持人脸一致，</textarea></label>
+          <div class="config-actions"><button id="saveConfig" class="save-config" type="button">保存当前配置</button><span>提示词与显卡选项会在本机保留</span></div>
+          <details class="advanced"><summary>进阶参数 <span>选择云端运行显卡</span></summary><div class="advanced-content"><label class="field"><span>运行显卡</span><select id="instanceType"><option value="default">default · 24G 显存</option><option value="plus">plus · 48G 显存</option></select></label></div></details>
+          <button id="generateButton" class="generate" type="submit"><span>开始 Klein 换头</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg></button><p id="formMessage" class="form-message" aria-live="polite"></p>
+        </form>
+
+        <aside class="result-panel" aria-labelledby="resultTitle"><div class="result-top"><div><p class="eyebrow">OUTPUT</p><h2 id="resultTitle">换头结果</h2></div><span id="status" class="status idle">等待提交</span></div><div id="taskQueue" class="task-queue hidden" aria-live="polite"></div><div id="empty" class="empty"><div>✦</div><h3>准备进行面部融合</h3><p>上传源头像和目标画面后开始生成。结果会自动解压并保留在共享图片池。</p></div><div id="progress" class="progress hidden"><div class="orb"></div><strong id="progressTitle">正在提交任务…</strong><small id="progressDetail">连接 RunningHub 云端</small></div><div id="results" class="results hidden"><div class="pool-toolbar"><div><span>共享本地图片池</span><strong id="poolCount">0 张图片</strong></div><button id="clearPool" type="button" class="clear-pool">清空图片池</button></div><div id="poolGrid" class="pool-grid"></div><p id="poolEmpty" class="pool-empty hidden">图片池为空。完成一次生成后，图片会缓存到此浏览器中。</p></div><p class="footnote">生成结果由 RunningHub 提供，原始链接有效期为 24 小时；图片池使用当前浏览器的本地缓存，可随时清空。</p></aside>
+      </section>
+    </main>
+    <template id="imageCardTemplate"><article class="image-card"><button type="button" class="image-button" title="点击放大查看"><img loading="lazy" alt="Klein 换头结果" /></button><div><span class="image-name"></span><div class="card-actions"><a class="download-image" download>下载</a><button class="delete-image" type="button">删除</button></div></div></article></template>
+    <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="图片放大预览"><button id="closeLightbox" type="button" aria-label="关闭预览">×</button><img id="lightboxImage" alt="放大预览" /><p id="lightboxName"></p></div>
+    <script src="./vendor/jszip.min.js"></script>
+    <script src="./klein-face-swap.js"></script>
+  </body>
+</html>

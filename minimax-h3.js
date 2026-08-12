@@ -1,21 +1,21 @@
 const API_BASE = 'https://www.runninghub.ai/openapi/v2';
 const CANCEL_TASK_URL = 'https://www.runninghub.ai/task/openapi/cancel';
-const WORKFLOW_JSON_URL = 'https://www.runninghub.ai/api/openapi/getJsonApiFormat';
 const WORKFLOW_ID = '2086493935005970434';
 const POLL_INTERVAL = 3000;
 const POLL_TIMEOUT = 10 * 60 * 1000;
 const MAX_CONCURRENT_TASKS = 3;
 const POOL_DB_NAME = 'krea2-runninghub-image-pool';
 const POOL_STORE_NAME = 'images';
-const CONFIG_STORAGE_KEY = 'krea2-minimax-h3-configuration-v1';
+const CONFIG_STORAGE_KEY = 'krea2-minimax-h3-configuration-v2';
+const MODEL_CALLER_STORAGE_KEY = 'krea2-openai-compatible-caller-v1';
 
 const $ = (id) => document.getElementById(id);
 const ui = {
-  form: $('minimaxForm'), prompt: $('prompt'), constraint: $('characterConstraint'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), instance: $('instanceType'),
+  form: $('minimaxForm'), prompt: $('prompt'), width: $('width'), height: $('height'), steps: $('steps'), cfg: $('cfg'), seed: $('seed'), instance: $('instanceType'),
   files: [$('referenceImage1'), $('referenceImage2'), $('referenceImage3')], previews: [$('referencePreview1'), $('referencePreview2'), $('referencePreview3')],
   uploadTitles: [$('uploadTitle1'), $('uploadTitle2'), $('uploadTitle3')], uploadDetails: [$('uploadDetail1'), $('uploadDetail2'), $('uploadDetail3')],
-  button: $('generateButton'), message: $('formMessage'), keyStatus: $('keyStatus'), status: $('status'), empty: $('empty'), progress: $('progress'), results: $('results'),
-  progressTitle: $('progressTitle'), progressDetail: $('progressDetail'), taskQueue: $('taskQueue'), poolGrid: $('poolGrid'), poolCount: $('poolCount'), poolEmpty: $('poolEmpty'), clearPool: $('clearPool'), facePreview: $('facePreview'), facePreviewHint: $('facePreviewHint'),
+  button: $('generateButton'), message: $('formMessage'), optimize: $('optimizePrompt'), keyStatus: $('keyStatus'), status: $('status'), empty: $('empty'), progress: $('progress'), results: $('results'),
+  progressTitle: $('progressTitle'), progressDetail: $('progressDetail'), taskQueue: $('taskQueue'), poolGrid: $('poolGrid'), poolCount: $('poolCount'), poolEmpty: $('poolEmpty'), clearPool: $('clearPool'),
   lightbox: $('lightbox'), lightboxImage: $('lightboxImage'), lightboxName: $('lightboxName'), closeLightbox: $('closeLightbox'), saveConfig: $('saveConfig'),
 };
 const taskRecords = [];
@@ -32,18 +32,62 @@ function friendlyError(error) {
 }
 function updateKeyStatus() { const ready = Boolean(apiKey()); ui.keyStatus.textContent = ready ? '已共享 API Key' : '主页面尚未保存 API Key'; ui.keyStatus.classList.toggle('ready', ready); }
 function readJobInput() {
-  return { key: apiKey(), files: ui.files.map((input) => input.files[0] || null), prompt: ui.prompt.value.trim(), constraint: ui.constraint.value.trim(), width: Number(ui.width.value), height: Number(ui.height.value), steps: Number(ui.steps.value), cfg: Number(ui.cfg.value), seed: ui.seed.value === '' ? null : Number(ui.seed.value), instance: ui.instance.value };
+  return { key: apiKey(), files: ui.files.map((input) => input.files[0] || null), prompt: ui.prompt.value.trim(), width: Number(ui.width.value), height: Number(ui.height.value), steps: Number(ui.steps.value), cfg: Number(ui.cfg.value), seed: ui.seed.value === '' ? null : Number(ui.seed.value), instance: ui.instance.value };
 }
 function saveCurrentConfiguration() {
-  const configuration = { prompt: ui.prompt.value, constraint: ui.constraint.value, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, instance: ui.instance.value };
+  const configuration = { prompt: ui.prompt.value, width: ui.width.value, height: ui.height.value, steps: ui.steps.value, cfg: ui.cfg.value, seed: ui.seed.value, instance: ui.instance.value };
   localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configuration)); ui.message.textContent = '当前配置已保存，刷新页面后会自动恢复。'; ui.message.className = 'form-message info';
 }
 function restoreCurrentConfiguration() {
   try {
     const configuration = JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY) || 'null'); if (!configuration) return;
-    const values = { prompt: ui.prompt, constraint: ui.constraint, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, instance: ui.instance };
+    const values = { prompt: ui.prompt, width: ui.width, height: ui.height, steps: ui.steps, cfg: ui.cfg, seed: ui.seed, instance: ui.instance };
     Object.entries(values).forEach(([key, input]) => { if (configuration[key] !== undefined && configuration[key] !== null) input.value = configuration[key]; });
   } catch { localStorage.removeItem(CONFIG_STORAGE_KEY); }
+}
+function modelCallerConfiguration() { try { return JSON.parse(localStorage.getItem(MODEL_CALLER_STORAGE_KEY) || '{}'); } catch { return {}; } }
+function chatCompletionsUrl(endpoint) {
+  const base = endpoint.trim().replace(/\/+$/, '').replace(/\/models(?:\?.*)?$/i, '');
+  if (!base) throw new Error('请先在“模型调用器”页面保存服务地址。');
+  return /\/chat\/completions$/i.test(base) ? base : `${base}/chat/completions`;
+}
+function fileAsDataUri(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error(`无法读取参考图：${file.name}`)); reader.readAsDataURL(file); }); }
+function completionText(payload) {
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content.trim();
+  if (Array.isArray(content)) return content.map((part) => part?.text || part?.content || '').join('').trim();
+  return '';
+}
+const PROMPT_POLISH_TEMPLATE = `你是一位专业的AI绘画提示词润色专家。你的唯一任务是把用户给出的任何简单描述、关键词或粗糙想法，润色成高质量、可直接用于图像生成的详细提示词。
+
+必须严格遵守以下规则：
+1. 输出格式必须固定为以下六个部分，缺一不可，标题必须完全一致：
+**人物形象与外貌特征：**
+**肢体语言与姿态：**
+**服饰细节：**
+**配饰：**
+**环境与背景：**
+**构图与光影：**
+2. 使用客观、冷静的照片分析式语言，细节颗粒度高、具体、可视化，避免抽象形容词堆砌。全部使用中文输出，语言流畅自然且具有画面感。
+3. 充分理解用户的核心意图；未提到的部分可根据逻辑和画面合理性补充，但不得偏离用户原意。若用户提供参考图特征，优先保留其外貌、发型、体型等关键信息。构图与光影必须明确镜头类型、光线方向、氛围和画面质感。若用户要求裸体或高暴露，需明确描述身体特征，并注意遮挡隐私部位。
+4. 禁止输出六个标题之外的任何内容；禁止使用英文（专有名词除外）；每个部分必须是连贯段落，不得写成分点或列表。
+5. 必须仔细读取全部已上传参考图。它们按图片 1、图片 2、图片 3 的顺序提供；保留用户文字中指定的图片角色关系、替换关系、背景、姿态和主体意图，不得遗漏任何可见关键信息。`;
+async function optimizePrompt() {
+  const files = ui.files.map((input) => input.files[0] || null); const currentPrompt = ui.prompt.value.trim(); const modelConfig = modelCallerConfiguration();
+  if (!currentPrompt && !files.some(Boolean)) { ui.message.textContent = '请先填写编辑指令或上传至少一张参考图。'; ui.prompt.focus(); return; }
+  if (!modelConfig.endpoint || !modelConfig.apiKey || !modelConfig.model) { ui.message.textContent = '请先在“模型调用器”页面保存服务地址、密钥并选择模型。'; return; }
+  ui.optimize.disabled = true; ui.optimize.textContent = '润色中…'; ui.message.textContent = '正在读取参考图并润色编辑指令…'; ui.message.className = 'form-message info';
+  try {
+    const content = [{ type: 'text', text: `用户原始编辑指令：${currentPrompt || '未填写，请根据参考图生成适配的编辑指令。'}\n已上传参考图顺序：${files.map((file, index) => file ? `图片${index + 1}（${file.name}）` : `图片${index + 1}未上传`).join('；')}。` }];
+    for (const [index, file] of files.entries()) if (file) { content.push({ type: 'text', text: `以下是图片${index + 1}，请在润色时结合其可见信息，并保留用户指定的图片关系：` }); content.push({ type: 'image_url', image_url: { url: await fileAsDataUri(file) } }); }
+    const response = await fetch(chatCompletionsUrl(modelConfig.endpoint), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${modelConfig.apiKey}` }, body: JSON.stringify({ model: modelConfig.model, temperature: 0.35, messages: [{ role: 'system', content: PROMPT_POLISH_TEMPLATE }, { role: 'user', content }] }) });
+    let payload; try { payload = await response.json(); } catch { throw new Error(`模型服务返回了无法解析的数据（HTTP ${response.status}）。`); }
+    if (!response.ok) throw new Error(payload.error?.message || payload.message || `模型调用失败（HTTP ${response.status}）。`);
+    const optimized = completionText(payload).replace(/^```(?:text|markdown)?\s*/i, '').replace(/```$/i, '').trim();
+    if (!optimized) throw new Error('模型未返回可用的润色提示词。');
+    ui.prompt.value = optimized; ui.message.textContent = '编辑指令已按六段式模板润色并替换。'; ui.message.className = 'form-message info';
+  } catch (error) { ui.message.textContent = error.message || 'AI 润色失败，请检查模型调用器配置或跨域设置。'; ui.message.className = 'form-message'; }
+  finally { ui.optimize.disabled = false; ui.optimize.textContent = '✦ AI 润色'; }
 }
 function createTaskRecord(job) { return { key: imageId(), taskId: '', apiKey: job.key, status: '正在提交', detail: '准备上传参考图', state: 'working', isActive: true, error: '', zipUrl: '', cancelRequested: false, cancelling: false }; }
 function updateTaskRecord(record, status, detail, state = 'working') { record.status = status; record.detail = detail; record.state = state; renderTaskQueue(); updateOutputVisibility(); }
@@ -84,29 +128,16 @@ async function uploadReference(file, key) {
 function buildNodeInfoList(job, fileNames) {
   const [first, second, third] = fileNames;
   const list = [
-    node(71, 'image', first), node(78, 'text', job.prompt), node(53, 'text', job.constraint),
+    node(71, 'image', first), node(78, 'text', job.prompt),
     node(60, 'value', job.width), node(61, 'value', job.height), node(77, 'length', 5), node(45, 'steps', job.steps), node(45, 'cfg', job.cfg),
   ];
-  if (job.referenceBranches.two) list.push(node(69, 'image', second || first));
-  if (job.referenceBranches.three) list.push(node(72, 'image', third || first));
+  if (second) list.push(node(69, 'image', second));
+  if (third) list.push(node(72, 'image', third));
   if (job.seed !== null) list.push(node(45, 'seed', job.seed));
   return list;
 }
 async function submitTask(job, fileNames) { return requestJson(`${API_BASE}/run/workflow/${WORKFLOW_ID}`, { method: 'POST', headers: headers(job.key), body: JSON.stringify({ addMetadata: true, nodeInfoList: buildNodeInfoList(job, fileNames), instanceType: job.instance, usePersonalQueue: false }) }); }
 async function getTask(taskId, key) { return requestJson(`${API_BASE}/query`, { method: 'POST', headers: headers(key), body: JSON.stringify({ taskId }) }); }
-async function getPublishedWorkflowPrompt(key) {
-  const data = await requestJson(WORKFLOW_JSON_URL, { method: 'POST', headers: headers(key), body: JSON.stringify({ apiKey: key, workflowId: WORKFLOW_ID }) });
-  const rawPrompt = data.data?.prompt;
-  if (!rawPrompt) throw new Error('无法读取当前云端工作流配置，请稍后重试。');
-  try { return JSON.parse(rawPrompt); } catch { throw new Error('云端工作流配置格式异常，请在 RunningHub 中重新保存该工作流。'); }
-}
-async function prepareReferenceBranches(job) {
-  const prompt = await getPublishedWorkflowPrompt(job.key);
-  const branches = { two: Boolean(prompt['69']), three: Boolean(prompt['72']) };
-  if (job.files[1] && !branches.two) throw new Error('当前 API 工作流没有“2图”节点，无法使用第二张图。请在 RunningHub 中启用 2 图分支并另存/发布为一个新工作流，然后把新工作流 ID 发给我接入。');
-  if (job.files[2] && !branches.three) throw new Error('当前 API 工作流没有“3图”节点，无法使用第三张图。请在 RunningHub 中启用 3 图分支并另存/发布为一个新工作流，然后把新工作流 ID 发给我接入。');
-  return branches;
-}
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function pollTask(taskId, record) {
   const startedAt = Date.now();
@@ -134,18 +165,6 @@ async function unpackZip(result) {
   if (!images.length) throw new Error('ZIP 已下载，但未识别到可预览图片。'); return images;
 }
 async function imageResultToCacheEntry(result) { const response = await fetch(result.url); if (!response.ok) throw new Error(`无法下载图片结果（HTTP ${response.status}）。`); return { name: `MiniMax-H3-${result.nodeId || 'result'}.${result.outputType || 'png'}`, blob: await response.blob() }; }
-async function renderFacePreview(result) {
-  const response = await fetch(result.url);
-  if (!response.ok) throw new Error(`无法下载节点 65 预览图（HTTP ${response.status}）。`);
-  if (ui.facePreview.dataset.objectUrl) URL.revokeObjectURL(ui.facePreview.dataset.objectUrl);
-  const objectUrl = URL.createObjectURL(await response.blob());
-  ui.facePreview.dataset.objectUrl = objectUrl; ui.facePreview.src = objectUrl; ui.facePreview.classList.remove('hidden');
-  ui.facePreviewHint.textContent = '节点 82 返回的最新人脸捕捉预览。';
-}
-function setFacePreviewHint(text) {
-  if (ui.facePreview.dataset.objectUrl) { URL.revokeObjectURL(ui.facePreview.dataset.objectUrl); delete ui.facePreview.dataset.objectUrl; }
-  ui.facePreview.removeAttribute('src'); ui.facePreview.classList.add('hidden'); ui.facePreviewHint.textContent = text;
-}
 function openPoolDb() { return new Promise((resolve, reject) => { const request = indexedDB.open(POOL_DB_NAME, 1); request.onupgradeneeded = () => request.result.createObjectStore(POOL_STORE_NAME, { keyPath: 'id' }); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
 function poolRequest(operation) { return openPoolDb().then((db) => new Promise((resolve, reject) => { const transaction = db.transaction(POOL_STORE_NAME, 'readwrite'); const request = operation(transaction.objectStore(POOL_STORE_NAME)); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); })); }
 async function cacheImages(images) { for (const image of images) { if (!(image.blob instanceof Blob)) throw new Error('图片缓存数据无效，无法写入本地图片池。'); await poolRequest((store) => store.put({ id: imageId(), name: image.name, blob: image.blob, createdAt: Date.now(), source: 'MiniMax H3' })); } }
@@ -166,11 +185,7 @@ async function renderImagePool() {
 }
 async function renderResults(task, record) {
   const outputs = task.results || []; if (!outputs.length) throw new Error('任务已完成，但未返回任何结果文件。'); const images = [];
-  const node82Preview = outputs.find((result) => String(result.nodeId) === '82' && result.url && !isZip(result));
-  if (node82Preview) {
-    try { await renderFacePreview(node82Preview); } catch (error) { setFacePreviewHint(`节点 82 预览图下载失败：${friendlyError(error)}`); }
-  } else setFacePreviewHint('本次云端未返回节点 #82 的人脸捕捉图，请确认新版工作流的 Save Image 节点已启用并发布。');
-  for (const result of outputs) { if (!result.url || String(result.nodeId) === '82') continue; if (isZip(result)) { record.zipUrl = result.url; updateTaskRecord(record, '正在解压结果…', '浏览器正在读取 ZIP 中的图片'); images.push(...await unpackZip(result)); } else if (/\.(png|jpe?g|webp|gif|avif)(?:$|\?)/i.test(result.url)) images.push(await imageResultToCacheEntry(result)); }
+  for (const result of outputs) { if (!result.url) continue; if (isZip(result)) { record.zipUrl = result.url; updateTaskRecord(record, '正在解压结果…', '浏览器正在读取 ZIP 中的图片'); images.push(...await unpackZip(result)); } else if (/\.(png|jpe?g|webp|gif|avif)(?:$|\?)/i.test(result.url)) images.push(await imageResultToCacheEntry(result)); }
   if (!images.length) throw new Error('任务已完成，但没有可预览的图片输出。'); await cacheImages(images); await renderImagePool(); updateTaskRecord(record, '编辑完成', `${images.length} 张图片已加入共享图片池`, 'completed');
 }
 function bindFilePreview(index) {
@@ -182,6 +197,7 @@ function bindFilePreview(index) {
 }
 ui.files.forEach((_, index) => bindFilePreview(index));
 ui.saveConfig.addEventListener('click', saveCurrentConfiguration);
+ui.optimize.addEventListener('click', optimizePrompt);
 document.querySelectorAll('.preset-prompts button').forEach((button) => button.addEventListener('click', () => { ui.prompt.value = button.dataset.prompt; ui.prompt.focus(); }));
 document.querySelectorAll('.size-presets button').forEach((button) => button.addEventListener('click', () => {
   const [width, height] = button.dataset.size.split(',');
@@ -195,12 +211,7 @@ ui.form.addEventListener('submit', async (event) => {
   if (!job.prompt) { ui.message.textContent = '请先写下编辑指令。'; ui.prompt.focus(); return; }
   if (!window.JSZip) { ui.message.textContent = 'ZIP 解压组件加载失败，请检查网络后刷新。'; return; }
   if (runningTaskKeys.size >= MAX_CONCURRENT_TASKS) { ui.message.textContent = `最多同时运行 ${MAX_CONCURRENT_TASKS} 个任务，请等待任一任务完成后再提交。`; return; }
-  try {
-    ui.message.textContent = '正在校验云端参考图分支…';
-    job.referenceBranches = await prepareReferenceBranches(job);
-    ui.message.textContent = '';
-  } catch (error) { ui.message.textContent = friendlyError(error); return; }
-  const record = createTaskRecord(job); taskRecords.push(record); runningTaskKeys.add(record.key); setFacePreviewHint('等待本次运行结果。节点 #82 的人脸捕捉图会显示在这里。'); renderTaskQueue(); updateOutputVisibility();
+  const record = createTaskRecord(job); taskRecords.push(record); runningTaskKeys.add(record.key); renderTaskQueue(); updateOutputVisibility();
   try {
     const filesToUpload = job.files.filter(Boolean); updateTaskRecord(record, '正在上传参考图…', `正在上传 ${filesToUpload.length} 张参考图至 RunningHub`);
     const uploaded = await Promise.all(job.files.map((file) => file ? uploadReference(file, job.key) : Promise.resolve(null)));
