@@ -18,14 +18,18 @@
       <header class="topbar">
         <div class="brand"><span class="brand-mark">AN</span><span>ANIMA <i>·</i> RUNNINGHUB</span></div>
         <div class="top-actions">
-          <a class="app-link" href="./index.html">Krea 2 主站 ↗</a>
           <a class="app-link" href="./character-card.html" target="_blank" rel="noopener">四视图角色卡 ↗</a>
-          <div class="connection"><span class="dot"></span><span>本地调用模式</span></div>
+          <a class="app-link" href="./minimax-h3.html" target="_blank" rel="noopener">MiniMax H3 ↗</a>
+          <a class="app-link" href="./minimax-video.html" target="_blank" rel="noopener">H3 视频生成 ↗</a>
+          <a class="app-link" href="./minimax-remover.html" target="_blank" rel="noopener">H3 一键消除 ↗</a>
+          <a class="app-link" href="./model-caller.html" target="_blank" rel="noopener">模型调用器 ↗</a>
+          <a class="app-link" href="./anima.html" target="_blank" rel="noopener">二次元生成 ↗</a>
+          <div class="connection"><span id="connectionDot" class="dot"></span><span id="connectionText">本地调用模式</span></div>
           <div class="settings-wrap">
             <button id="settingsButton" class="settings-button" type="button" aria-expanded="false" aria-controls="settingsPanel"><span class="settings-icon">⚙</span><span>API 设置</span><i id="keyState">未设置</i></button>
             <section id="settingsPanel" class="settings-panel hidden" aria-label="RunningHub API 设置">
               <div class="settings-title"><div><p class="eyebrow">CONNECTION</p><strong>RunningHub API Key</strong></div><button id="closeSettings" type="button" aria-label="关闭设置">×</button></div>
-              <label class="field api-key-field"><span>API Key</span><div class="secret-input"><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴你的 32 位 API Key" /><button id="toggleKey" type="button">显示</button></div><small>与 Krea 2 主站共享此浏览器中的 API Key。</small></label>
+              <label class="field api-key-field"><span>API Key</span><div class="secret-input"><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴你的 32 位 API Key" /><button id="toggleKey" type="button" aria-label="显示 API Key">显示</button></div><small>仅保存于此浏览器的当前设备。请勿在公共电脑保存密钥。</small></label>
               <div class="settings-actions"><button id="clearKey" type="button" class="clear-key">清除</button><button id="saveKey" type="button" class="save-key">保存设置</button></div>
               <p id="settingsMessage" class="settings-message" aria-live="polite"></p>
             </section>
