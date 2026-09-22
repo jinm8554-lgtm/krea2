@@ -34,13 +34,14 @@
       </header>
 
       <section class="hero">
-        <div><p class="eyebrow">ANIME IMAGE GENERATION / WORKFLOW #2089732282689421313</p><h1>让角色，<em>跃然成画。</em></h1><p class="lede">Anima 二次元生成工作流。用自然语言描述角色、构图与氛围，直接在 RunningHub 云端渲染高质量插画。</p></div>
-        <div class="workflow-note"><span>当前模型</span><strong>Anima 主流</strong><small>多 LoRA 画风融合 · PNG 图片输出</small><div class="anima-tags"><span>ANIME</span><span>ILLUSTRATION</span></div></div>
+        <div><p id="workflowEyebrow" class="eyebrow">ANIME IMAGE GENERATION / WORKFLOW #2089732282689421313</p><h1>让角色，<em>跃然成画。</em></h1><p class="lede">Anima 与 JANIMA 二次元生成工作流。用自然语言描述角色、构图与氛围，直接在 RunningHub 云端渲染高质量插画。</p></div>
+        <div class="workflow-note"><span>当前生成流</span><strong id="workflowLabel">柔和画风</strong><small id="workflowDescription">原 Anima 主流 · 多 LoRA 画风融合</small><div class="anima-tags"><span id="workflowTag">ANIME</span><span>PNG OUTPUT</span></div></div>
       </section>
 
       <section class="workspace">
         <form id="generationForm" class="control-panel" novalidate>
           <div class="section-heading"><span>01</span><h2>创作设置</h2></div>
+          <div class="field workflow-field"><span>生成流 <small>Workflow</small></span><div class="workflow-switch" role="radiogroup" aria-label="生成流"><button type="button" class="workflow-choice active" data-workflow="soft" aria-pressed="true">柔和画风</button><button type="button" class="workflow-choice" data-workflow="janima" aria-pressed="false">JANIMA</button></div><small id="workflowHint" class="field-help">原 Anima 流程，适合柔和、稳定的二次元画面。</small></div>
           <label class="field prompt-field"><span>正向提示词 <small>Prompt</small></span><textarea id="prompt" required placeholder="描述角色、动作、镜头和画面氛围…"></textarea><small class="count"><b id="promptCount">0</b> / 4,000</small></label>
           <label class="field"><span>负向提示词 <small>Negative prompt</small></span><textarea id="negativePrompt" rows="3" placeholder="不希望在画面中出现的元素…">worst quality, low quality, blurry, score_1, score_2, score_3, artist name, artist signature, signature, name, watermark, patreon username, patreon logo, patreon name, patreon signature</textarea></label>
           <div class="field-row dimensions"><label class="field"><span>画布宽度</span><input id="width" type="number" min="256" max="2048" step="64" value="1024" /></label><span class="times">×</span><label class="field"><span>画布高度</span><input id="height" type="number" min="256" max="2048" step="64" value="1536" /></label></div>
