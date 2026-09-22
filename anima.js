@@ -15,8 +15,8 @@ const WORKFLOWS = Object.freeze({
   janima: {
     id: '2100536212313731074',
     label: 'JANIMA',
-    description: 'JANIMA 29B · 二阶段高细节渲染',
-    hint: 'JANIMA 二阶段流程，保留基础构图并进行高细节放大。',
+    description: 'JANIMA 29B · 高细节渲染',
+    hint: 'JANIMA 发布流程，使用远端工作流的固定高细节处理。',
     progressName: 'JANIMA',
     tag: 'JANIMA',
   },
@@ -25,14 +25,6 @@ const WORKFLOWS = Object.freeze({
 const FLOW_DEFAULTS = {
   soft: { steps: '13', cfg: '1', sampler: 'dpmpp_2m_sde_gpu', scheduler: 'beta57', denoise: '1' },
   janima: { steps: '30', cfg: '4', sampler: 'euler_ancestral', scheduler: 'beta57', denoise: '1' },
-};
-
-const JANIMA_SECOND_STAGE = {
-  steps: 4,
-  cfg: 1,
-  sampler: 'dpmpp_2m_sde_gpu',
-  scheduler: 'beta57',
-  denoise: 0.5,
 };
 
 const $ = id => document.getElementById(id);
@@ -165,15 +157,8 @@ function buildJanimaNodeInfoList(values) {
     node(19, 'sampler_name', values.sampler),
     node(19, 'scheduler', values.scheduler),
     node(19, 'denoise', values.denoise),
-    node(84, 'steps', JANIMA_SECOND_STAGE.steps),
-    node(84, 'cfg', JANIMA_SECOND_STAGE.cfg),
-    node(84, 'sampler_name', JANIMA_SECOND_STAGE.sampler),
-    node(84, 'scheduler', JANIMA_SECOND_STAGE.scheduler),
-    node(84, 'denoise', JANIMA_SECOND_STAGE.denoise),
   ];
-  if (values.seed !== null) {
-    list.push(node(19, 'seed', values.seed), node(84, 'seed', values.seed));
-  }
+  if (values.seed !== null) list.push(node(19, 'seed', values.seed));
   return list;
 }
 
