@@ -38,14 +38,14 @@
       </header>
 
       <section class="hero">
-        <div><p id="workflowEyebrow" class="eyebrow">ANIME IMAGE GENERATION / WORKFLOW #2089732282689421313</p><h1>让角色，<em>跃然成画。</em></h1><p class="lede">Anima 与 JANIMA 二次元生成工作流。用自然语言描述角色、构图与氛围，直接在 RunningHub 云端渲染高质量插画。</p></div>
+        <div><p id="workflowEyebrow" class="eyebrow">ANIME IMAGE GENERATION / WORKFLOW #2089732282689421313</p><h1>让角色，<em>跃然成画。</em></h1><p class="lede">Anima、JANIMA、wai、miaomiao 与优质平面二次元生成工作流。用自然语言描述角色、构图与氛围，直接在 RunningHub 云端渲染高质量插画。</p></div>
         <div class="workflow-note"><span>当前生成流</span><strong id="workflowLabel">柔和画风</strong><small id="workflowDescription">原 Anima 主流 · 多 LoRA 画风融合</small><div class="anima-tags"><span id="workflowTag">ANIME</span><span>PNG OUTPUT</span></div></div>
       </section>
 
       <section class="workspace">
         <form id="generationForm" class="control-panel" novalidate>
           <div class="section-heading"><span>01</span><h2>创作设置</h2></div>
-          <div class="field workflow-field"><span>生成流 <small>Workflow</small></span><div class="workflow-switch" role="radiogroup" aria-label="生成流"><button type="button" class="workflow-choice active" data-workflow="soft" aria-pressed="true">柔和画风</button><button type="button" class="workflow-choice" data-workflow="janima" aria-pressed="false">JANIMA</button></div><small id="workflowHint" class="field-help">原 Anima 流程，适合柔和、稳定的二次元画面。</small></div>
+          <div class="field workflow-field"><span>生成流 <small>Workflow</small></span><div class="workflow-switch" role="radiogroup" aria-label="生成流"><button type="button" class="workflow-choice active" data-workflow="soft" aria-pressed="true">柔和画风</button><button type="button" class="workflow-choice" data-workflow="janima" aria-pressed="false">JANIMA</button><button type="button" class="workflow-choice" data-workflow="wai" aria-pressed="false">wai</button><button type="button" class="workflow-choice" data-workflow="miaomiao" aria-pressed="false">miaomiao</button><button type="button" class="workflow-choice" data-workflow="flat" aria-pressed="false">优质平面</button></div><small id="workflowHint" class="field-help">原 Anima 流程，适合柔和、稳定的二次元画面。</small></div>
           <label class="field prompt-field"><span>正向提示词 <small>Prompt</small></span><textarea id="prompt" required placeholder="描述角色、动作、镜头和画面氛围…"></textarea><small class="count"><b id="promptCount">0</b> / 4,000</small></label>
           <label class="field"><span>负向提示词 <small>Negative prompt</small></span><textarea id="negativePrompt" rows="3" placeholder="不希望在画面中出现的元素…">worst quality, low quality, blurry, score_1, score_2, score_3, artist name, artist signature, signature, name, watermark, patreon username, patreon logo, patreon name, patreon signature</textarea></label>
           <div class="field-row dimensions"><label class="field"><span>画布宽度</span><input id="width" type="number" min="256" max="2048" step="64" value="1024" /></label><span class="times">×</span><label class="field"><span>画布高度</span><input id="height" type="number" min="256" max="2048" step="64" value="1536" /></label></div>
@@ -53,7 +53,7 @@
           <details class="advanced"><summary><span>进阶参数</span><small>采样器、种子与运行实例</small></summary><div class="advanced-content">
             <div class="field-row three"><label class="field"><span>步数</span><input id="steps" type="number" min="1" max="50" value="13" /></label><label class="field"><span>CFG</span><input id="cfg" type="number" min="0" max="20" step="0.1" value="1" /></label><label class="field"><span>批次数</span><input id="batchSize" type="number" min="1" max="4" value="1" /></label></div>
             <div class="field-row"><label class="field"><span>随机种子</span><input id="seed" type="number" min="0" placeholder="留空则随机" /></label><label class="field"><span>运行实例</span><select id="instanceType"><option value="default">default · 24G</option><option value="plus">plus · 48G</option></select></label></div>
-            <div class="field-row"><label class="field"><span>采样器</span><select id="sampler"><option value="dpmpp_2m_sde_gpu">DPM++ 2M SDE GPU</option><option value="euler">Euler</option><option value="euler_ancestral">Euler ancestral</option></select></label><label class="field"><span>调度器</span><select id="scheduler"><option value="beta57">Beta 57</option><option value="normal">Normal</option><option value="karras">Karras</option></select></label></div>
+            <div class="field-row"><label class="field"><span>采样器</span><select id="sampler"><option value="dpmpp_2m_sde_gpu">DPM++ 2M SDE GPU</option><option value="euler">Euler</option><option value="euler_ancestral">Euler ancestral</option><option value="er_sde">ER SDE</option></select></label><label class="field"><span>调度器</span><select id="scheduler"><option value="beta57">Beta 57</option><option value="normal">Normal</option><option value="karras">Karras</option><option value="simple">Simple</option></select></label></div>
             <label class="field"><span>降噪强度 <small>Denoise</small></span><input id="denoise" type="number" min="0" max="1" step="0.05" value="1" /></label>
           </div></details>
           <div class="section-heading api-heading"><span>02</span><h2>运行选项</h2></div><p class="api-reminder">API Key 请在右上角 <button id="openSettingsHint" type="button">API 设置</button> 中填写并保存。</p>
@@ -66,6 +66,6 @@
     </main>
     <template id="imageCardTemplate"><article class="image-card"><button class="image-link" type="button" title="点击放大查看"><img loading="lazy" alt="生成结果" /></button><div><span class="image-name"></span><div class="card-actions"><a class="download-image" download>下载</a><button class="delete-image" type="button">删除</button></div></div></article></template>
     <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="图片放大预览"><button id="closeLightbox" class="lightbox-close" type="button" aria-label="关闭预览">×</button><img id="lightboxImage" alt="放大预览" /><p id="lightboxName"></p></div>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="./anima.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="./anima.js?v=20261015-flat"></script>
   </body>
 </html>

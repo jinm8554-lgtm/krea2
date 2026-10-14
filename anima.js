@@ -20,11 +20,38 @@ const WORKFLOWS = Object.freeze({
     progressName: 'JANIMA',
     tag: 'JANIMA',
   },
+  wai: {
+    id: '2100538972782325762',
+    label: 'wai',
+    description: 'waiANIMA · PNG 打包为 ZIP 输出',
+    hint: 'waiANIMA 二次元工作流，适合角色与插画创作。',
+    progressName: 'wai',
+    tag: 'wai',
+  },
+  miaomiao: {
+    id: '2100544421812101122',
+    label: 'miaomiao',
+    description: 'MiaoMiaoHarem Anima 1.6 · PNG 打包为 ZIP 输出',
+    hint: 'MiaoMiaoHarem Anima 1.6 二次元工作流，适合角色与插画创作。',
+    progressName: 'miaomiao',
+    tag: 'miaomiao',
+  },
+  flat: {
+    id: '2100543800845393922',
+    label: '优质平面',
+    description: 'Anima 平面插画 · PNG 打包为 ZIP 输出',
+    hint: '优质平面二次元工作流，适合平面插画创作。',
+    progressName: '优质平面',
+    tag: '优质平面',
+  },
 });
 
 const FLOW_DEFAULTS = {
   soft: { steps: '13', cfg: '1', sampler: 'dpmpp_2m_sde_gpu', scheduler: 'beta57', denoise: '1' },
   janima: { steps: '30', cfg: '4', sampler: 'euler_ancestral', scheduler: 'beta57', denoise: '1' },
+  wai: { steps: '13', cfg: '1', sampler: 'er_sde', scheduler: 'beta57', denoise: '1' },
+  miaomiao: { steps: '13', cfg: '1', sampler: 'dpmpp_2m_sde_gpu', scheduler: 'beta57', denoise: '1' },
+  flat: { steps: '30', cfg: '5', sampler: 'er_sde', scheduler: 'simple', denoise: '1' },
 };
 
 const $ = id => document.getElementById(id);
@@ -162,7 +189,61 @@ function buildJanimaNodeInfoList(values) {
   return list;
 }
 
+function buildWaiNodeInfoList(values) {
+  const list = [
+    node(11, 'text', values.prompt),
+    node(12, 'text', values.negative),
+    node(62, 'width', values.width),
+    node(62, 'height', values.height),
+    node(62, 'batch_size', values.batch),
+    node(19, 'steps', values.steps),
+    node(19, 'cfg', values.cfg),
+    node(19, 'sampler_name', values.sampler),
+    node(19, 'scheduler', values.scheduler),
+    node(19, 'denoise', values.denoise),
+  ];
+  if (values.seed !== null) list.push(node(19, 'seed', values.seed));
+  return list;
+}
+
+function buildMiaomiaoNodeInfoList(values) {
+  const list = [
+    node(11, 'text', values.prompt),
+    node(12, 'text', values.negative),
+    node(28, 'width', values.width),
+    node(28, 'height', values.height),
+    node(28, 'batch_size', values.batch),
+    node(19, 'steps', values.steps),
+    node(19, 'cfg', values.cfg),
+    node(19, 'sampler_name', values.sampler),
+    node(19, 'scheduler', values.scheduler),
+    node(19, 'denoise', values.denoise),
+  ];
+  if (values.seed !== null) list.push(node(19, 'seed', values.seed));
+  return list;
+}
+
+function buildFlatNodeInfoList(values) {
+  const list = [
+    node(11, 'text', values.prompt),
+    node(12, 'text', values.negative),
+    node(28, 'width', values.width),
+    node(28, 'height', values.height),
+    node(28, 'batch_size', values.batch),
+    node(19, 'steps', values.steps),
+    node(19, 'cfg', values.cfg),
+    node(19, 'sampler_name', values.sampler),
+    node(19, 'scheduler', values.scheduler),
+    node(19, 'denoise', values.denoise),
+  ];
+  if (values.seed !== null) list.push(node(19, 'seed', values.seed));
+  return list;
+}
+
 function buildNodeInfoList(flowKey, values) {
+  if (flowKey === 'flat') return buildFlatNodeInfoList(values);
+  if (flowKey === 'miaomiao') return buildMiaomiaoNodeInfoList(values);
+  if (flowKey === 'wai') return buildWaiNodeInfoList(values);
   return flowKey === 'janima' ? buildJanimaNodeInfoList(values) : buildSoftNodeInfoList(values);
 }
 
